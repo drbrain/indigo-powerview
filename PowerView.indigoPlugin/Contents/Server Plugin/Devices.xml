@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<Devices>
+  <Device type="custom" id="PowerViewHub">
+    <Name>PowerView Hub</Name>
+    <ConfigUI>
+      <Field type="label" id="title">
+        <Label>PowerView Hub Settings</Label>
+      </Field>
+      <Field type="textfield" id="hubHostname" defaultValue="192.0.2.1">
+        <Label>Hostname/IP:</Label>
+      </Field>
+    </ConfigUI>
+  </Device>
+</Devices>

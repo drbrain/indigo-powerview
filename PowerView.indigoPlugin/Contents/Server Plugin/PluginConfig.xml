@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<PluginConfig>
+  <SupportURL>https://github.com/drbrain/indigo-powerview/</SupportURL>
+  <Field type="menu" id="logLevel" defaultValue="1">
+    <Label>Log level:</Label>
+    <List>
+      <Option value="0">Debug</Option>
+      <Option value="1">Info</Option>
+    </List>
+  </Field>
+</PluginConfig>
