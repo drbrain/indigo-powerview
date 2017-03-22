@@ -83,17 +83,14 @@ class Plugin(indigo.PluginBase):
         data = self.getShadeData(hubHostname, str(shadeId))
         data.pop('name') # don't overwrite local changes
 
-        batteryLevel = data.pop('batteryLevel')
-
-        shade.replacePluginPropsOnServer(data)
-
-        shade.updateStateOnServer('batteryLevel', batteryLevel)
+        for key, value in data.iteritems():
+            shade.updateStateOnServer(key, value)
 
     def createShade(self, hubHostname, shadeId):
         address = hubHostname + ':' + str(shadeId)
 
-        props = self.getShadeData(hubHostname, str(shadeId))
-        name = props.pop('name')
+        data = self.getShadeData(hubHostname, str(shadeId))
+        name = data.pop('name')
 
         self.debugLog('Creating shade ' + address)
 
@@ -101,8 +98,7 @@ class Plugin(indigo.PluginBase):
                 protocol = indigo.kProtocol.Plugin,
                 address = address,
                 deviceTypeId = 'PowerViewShade',
-                name = name,
-                props = props)
+                name = name)
 
     def getJSON(self, url):
         try:
@@ -124,7 +120,6 @@ class Plugin(indigo.PluginBase):
         data.pop('id')
 
         data['name']    = base64.b64decode(data.pop('name'))
-        data['address'] = hubHostname + ':' + str(shadeId)
         data['batteryLevel'] = data.pop('batteryStrength')
 
         if 'positions' in data:
