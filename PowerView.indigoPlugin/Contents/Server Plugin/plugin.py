@@ -89,6 +89,9 @@ class Plugin(indigo.PluginBase):
     def createShade(self, hubHostname, shadeId):
         address = hubHostname + ':' + str(shadeId)
 
+        if self.findShade(address):
+            return;
+
         data = self.getShadeData(hubHostname, str(shadeId))
         name = data.pop('name')
 
@@ -99,6 +102,13 @@ class Plugin(indigo.PluginBase):
                 address = address,
                 deviceTypeId = 'PowerViewShade',
                 name = name)
+
+    def findShade(self, address):
+        for device in indigo.devices.itervalues():
+            if device.deviceTypeId == 'PowerViewShade' and device.address == address:
+               return device
+
+        return None
 
     def getJSON(self, url):
         try:
