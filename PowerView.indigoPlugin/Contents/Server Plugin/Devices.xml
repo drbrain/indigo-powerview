@@ -80,10 +80,10 @@
         <TriggerLabel>Order</TriggerLabel>
         <ControlPageLabel>Order</ControlPageLabel>
       </State>
-      <State id="batteryStatus" readonly="true">
+      <State id="batteryLevel" readonly="true">
         <ValueType>Number</ValueType>
-        <TriggerLabel>Battery Status</TriggerLabel>
-        <ControlPageLabel>Battery Status</ControlPageLabel>
+        <TriggerLabel>Battery Level</TriggerLabel>
+        <ControlPageLabel>Battery Level</ControlPageLabel>
       </State>
       <State id="batteryStrength" readonly="true">
         <ValueType>Number</ValueType>

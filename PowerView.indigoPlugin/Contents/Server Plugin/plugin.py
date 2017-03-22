@@ -83,7 +83,11 @@ class Plugin(indigo.PluginBase):
         shadeProps = self.getShadeData(hubHostname, str(shadeId))
         shadeProps.pop('name') # don't overwrite local changes
 
+        batteryLevel = shadeProps.pop('batteryLevel')
+
         shade.replacePluginPropsOnServer(shadeProps)
+
+        shade.updateStateOnServer('batteryLevel', batteryLevel)
 
     def createShade(self, hubHostname, shadeId):
         address = hubHostname + ':' + str(shadeId)
@@ -121,6 +125,7 @@ class Plugin(indigo.PluginBase):
 
         shadeProps['name']    = base64.b64decode(shadeProps.pop('name'))
         shadeProps['address'] = hubHostname + ':' + str(shadeId)
+        shadeProps['batteryLevel'] = shadeProps.pop('batteryStrength')
 
         if 'positions' in shadeProps:
             shadePositions = shadeProps.pop('positions')
