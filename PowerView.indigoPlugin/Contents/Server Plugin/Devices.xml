@@ -33,4 +33,63 @@
       </State>
     </States>
   </Device>
+  <Device type="custom" id="PowerViewShade">
+    <Name>PowerView Shade</Name>
+    <States>
+      <State id="position1">
+        <ValueType>Number</ValueType>
+        <TriggerLabel>Position 1</TriggerLabel>
+        <TriggerLabelPrefix>Position 1 moved to</TriggerLabelPrefix>
+        <ControlPageLabel>Position 1</ControlPageLabel>
+        <ControlPageLabelPrefix>Position 1 moved to</ControlPageLabelPrefix>
+      </State>
+      <State id="posKind1" readonly="true">
+        <ValueType>Number</ValueType>
+        <TriggerLabel>Position Kind 1</TriggerLabel>
+        <ControlPageLabel>Position Kind 1</ControlPageLabel>
+      </State>
+      <State id="position2">
+        <ValueType>Number</ValueType>
+        <TriggerLabel>Position 2</TriggerLabel>
+        <TriggerLabelPrefix>Position 1 moved to</TriggerLabelPrefix>
+        <ControlPageLabel>Position 2</ControlPageLabel>
+        <ControlPageLabelPrefix>Position 1 moved to</ControlPageLabelPrefix>
+      </State>
+      <State id="posKind2" readonly="true">
+        <ValueType>Number</ValueType>
+        <TriggerLabel>Position Kind 2</TriggerLabel>
+        <ControlPageLabel>Position Kind 2</ControlPageLabel>
+      </State>
+      <State id="groupId" readonly="true">
+        <ValueType>Number</ValueType>
+        <TriggerLabel>Group Id</TriggerLabel>
+        <ControlPageLabel>Group ID</ControlPageLabel>
+      </State>
+      <State id="roomId" readonly="true">
+        <ValueType>Number</ValueType>
+        <TriggerLabel>Room ID</TriggerLabel>
+        <ControlPageLabel>Room ID</ControlPageLabel>
+      </State>
+      <State id="type" readonly="true">
+        <ValueType>Number</ValueType>
+        <TriggerLabel>Type</TriggerLabel>
+        <ControlPageLabel>Type</ControlPageLabel>
+      </State>
+      <State id="order" readonly="true">
+        <ValueType>Number</ValueType>
+        <TriggerLabel>Order</TriggerLabel>
+        <ControlPageLabel>Order</ControlPageLabel>
+      </State>
+      <State id="batteryStatus" readonly="true">
+        <ValueType>Number</ValueType>
+        <TriggerLabel>Battery Status</TriggerLabel>
+        <ControlPageLabel>Battery Status</ControlPageLabel>
+      </State>
+      <State id="batteryStrength" readonly="true">
+        <ValueType>Number</ValueType>
+        <TriggerLabel>Battery Strength</TriggerLabel>
+        <ControlPageLabel>Battery Strength</ControlPageLabel>
+      </State>
+    </States>
+  </Device>
 </Devices>
