@@ -80,12 +80,12 @@ class Plugin(indigo.PluginBase):
 
         hubHostname, shadeId = shade.address.split(':')
 
-        shadeProps = self.getShadeData(hubHostname, str(shadeId))
-        shadeProps.pop('name') # don't overwrite local changes
+        data = self.getShadeData(hubHostname, str(shadeId))
+        data.pop('name') # don't overwrite local changes
 
-        batteryLevel = shadeProps.pop('batteryLevel')
+        batteryLevel = data.pop('batteryLevel')
 
-        shade.replacePluginPropsOnServer(shadeProps)
+        shade.replacePluginPropsOnServer(data)
 
         shade.updateStateOnServer('batteryLevel', batteryLevel)
 
@@ -120,16 +120,16 @@ class Plugin(indigo.PluginBase):
     def getShadeData(self, hubHostname, shadeId):
         shadeUrl = 'http://' + hubHostname + '/api/shades/' + shadeId
 
-        shadeProps = self.getJSON(shadeUrl)['shade']
-        shadeProps.pop('id')
+        data = self.getJSON(shadeUrl)['shade']
+        data.pop('id')
 
-        shadeProps['name']    = base64.b64decode(shadeProps.pop('name'))
-        shadeProps['address'] = hubHostname + ':' + str(shadeId)
-        shadeProps['batteryLevel'] = shadeProps.pop('batteryStrength')
+        data['name']    = base64.b64decode(data.pop('name'))
+        data['address'] = hubHostname + ':' + str(shadeId)
+        data['batteryLevel'] = data.pop('batteryStrength')
 
-        if 'positions' in shadeProps:
-            shadePositions = shadeProps.pop('positions')
+        if 'positions' in data:
+            shadePositions = data.pop('positions')
 
-            shadeProps.update(shadePositions)
+            data.update(shadePositions)
 
-        return shadeProps
+        return data
