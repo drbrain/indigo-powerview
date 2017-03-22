@@ -12,7 +12,7 @@ class Plugin(indigo.PluginBase):
         indigo.PluginBase.__init__(self, pluginId, pluginDisplayName,
                                    pluginVersion, pluginPrefs)
 
-        self.debug = pluginPrefs.get(u'debug', False)
+        self.debug = pluginPrefs.get('debug', False)
 
         self.deviceList = []
 
@@ -26,47 +26,47 @@ class Plugin(indigo.PluginBase):
             self.deviceList.remove(device.id)
 
     def update(self, device):
-        if device.deviceTypeId == u'PowerViewHub':
+        if device.deviceTypeId == 'PowerViewHub':
             self.updateHub(device)
-        elif device.deviceTypeId == u'PowerViewShade':
+        elif device.deviceTypeId == 'PowerViewShade':
             self.updateShade(device)
 
     def updateHub(self, hub):
         state       = []
-        hubHostname = hub.pluginProps[u'hubHostname']
+        hubHostname = hub.pluginProps['hubHostname']
 
-        self.debugLog(u'Updating hub ' + hubHostname)
+        self.debugLog('Updating hub ' + hubHostname)
 
-        apiUrl = u'http://' + hubHostname + u'/api/'
+        apiUrl = 'http://' + hubHostname + '/api/'
 
-        roomsUrl            = apiUrl + u'rooms'
-        scenesUrl           = apiUrl + u'scenes'
-        scenecollectionsUrl = apiUrl + u'scenecollections'
-        shadesUrl           = apiUrl + u'shades'
+        roomsUrl            = apiUrl + 'rooms'
+        scenesUrl           = apiUrl + 'scenes'
+        scenecollectionsUrl = apiUrl + 'scenecollections'
+        shadesUrl           = apiUrl + 'shades'
 
         response = self.getJSON(roomsUrl)
 
-        roomIds = response[u'roomIds']
+        roomIds = response['roomIds']
 
-        state.append({u'key': 'roomCount', u'value': len(roomIds)})
+        state.append({'key': 'roomCount', 'value': len(roomIds)})
 
         response = self.getJSON(scenesUrl)
 
-        sceneIds = response[u'sceneIds']
+        sceneIds = response['sceneIds']
 
-        state.append({u'key': 'sceneCount', u'value': len(sceneIds)})
+        state.append({'key': 'sceneCount', 'value': len(sceneIds)})
 
         response = self.getJSON(scenecollectionsUrl)
 
-        sceneCollectionIds = response[u'sceneCollectionIds']
+        sceneCollectionIds = response['sceneCollectionIds']
 
-        state.append({u'key': 'sceneCollectionCount', u'value': len(sceneCollectionIds)})
+        state.append({'key': 'sceneCollectionCount', 'value': len(sceneCollectionIds)})
 
         response = self.getJSON(shadesUrl)
 
-        shadeIds = response[u'shadeIds']
+        shadeIds = response['shadeIds']
 
-        state.append({u'key': 'shadeCount', u'value': len(shadeIds)})
+        state.append({'key': 'shadeCount', 'value': len(shadeIds)})
 
         hub.updateStatesOnServer(state)
 
@@ -74,7 +74,7 @@ class Plugin(indigo.PluginBase):
             self.createShade(hubHostname, shadeId)
 
     def updateShade(self, shade):
-        self.debugLog(u'Updating shade ' + shade.address)
+        self.debugLog('Updating shade ' + shade.address)
 
         if shade.address == '':
             return
@@ -105,7 +105,7 @@ class Plugin(indigo.PluginBase):
         try:
             f = urllib2.urlopen(url)
         except urllib2.HTTPError, e:
-            self.errorLog(u'Error fetching %s: %s' % (url, str(e)))
+            self.errorLog('Error fetching %s: %s' % (url, str(e)))
             return;
 
         response = json.load(f)
