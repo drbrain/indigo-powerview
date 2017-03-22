@@ -85,10 +85,10 @@
         <TriggerLabel>Battery Level</TriggerLabel>
         <ControlPageLabel>Battery Level</ControlPageLabel>
       </State>
-      <State id="batteryStrength" readonly="true">
+      <State id="batteryStatus" readonly="true">
         <ValueType>Number</ValueType>
-        <TriggerLabel>Battery Strength</TriggerLabel>
-        <ControlPageLabel>Battery Strength</ControlPageLabel>
+        <TriggerLabel>Battery Status</TriggerLabel>
+        <ControlPageLabel>Battery Status</ControlPageLabel>
       </State>
     </States>
   </Device>
