@@ -33,11 +33,10 @@ class Plugin(indigo.PluginBase):
 
     def updateHub(self, hub):
         state       = []
-        hubHostname = hub.pluginProps['hubHostname']
 
-        self.debugLog('Updating hub ' + hubHostname)
+        self.debugLog('Updating hub ' + hub.address)
 
-        apiUrl = 'http://' + hubHostname + '/api/'
+        apiUrl = 'http://' + hub.address + '/api/'
 
         roomsUrl            = apiUrl + 'rooms'
         scenesUrl           = apiUrl + 'scenes'
@@ -71,7 +70,7 @@ class Plugin(indigo.PluginBase):
         hub.updateStatesOnServer(state)
 
         for shadeId in shadeIds:
-            self.createShade(hubHostname, shadeId)
+            self.createShade(hub.address, shadeId)
 
     def updateShade(self, shade):
         self.debugLog('Updating shade ' + shade.address)
