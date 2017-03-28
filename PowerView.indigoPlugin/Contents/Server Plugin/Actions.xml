@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<Actions>
+  <Action id="setShadePosition">
+    <Name>Set Shade Position</Name>
+    <CallbackMethod>setShadePosition</CallbackMethod>
+    <ConfigUI>
+      <Field id="address" type="menu">
+        <Label>Device</Label>
+        <List class="self" filter="" method="listShades"/>
+      </Field>
+      <Field id="top" type="textfield">
+        <Label>Top</Label>
+      </Field>
+      <Field id="bottom" type="textfield">
+        <Label>Bottom</Label>
+      </Field>
+    </ConfigUI>
+  </Action>
+</Actions>

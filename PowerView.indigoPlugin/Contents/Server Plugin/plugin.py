@@ -117,3 +117,60 @@ class Plugin(indigo.PluginBase):
             data.update(shadePositions)
 
         return data
+
+    def listShades(self, filter="", values=None, typeId="", targetId=0):
+        shades = []
+
+        #shades = list(filter(lambda d: d.deviceTypeId == 'PowerViewShade', indigo.devices))
+        for device in indigo.devices.itervalues():
+            if device.deviceTypeId == 'PowerViewShade':
+                shades.append((device.address, device.name))
+
+        return shades
+
+    def putJSON(self, url, data):
+        body = json.dumps(data)
+
+        request = urllib2.Request(url, data=body)
+        request.add_header('Content-Type', 'application/json')
+        request.get_method = lambda: "PUT"
+
+        opener = urllib2.build_opener(urllib2.HTTPHandler)
+
+        try:
+            f = opener.open(request)
+        except urllib2.HTTPError, e:
+            self.errorLog('Error fetching %s: %s' % (url, str(e)))
+            return;
+
+        response = json.load(f)
+
+        f.close()
+
+        return response
+
+    def setShadePosition(self, action):
+        address = action.props.get('address', None)
+        top     = action.props.get('top',    '')
+        bottom  = action.props.get('bottom', '')
+
+        self.debugLog('Setting position of ' + address +
+                      ' top: ' + top + ', bottom: ' + bottom)
+
+        hubHostname, shadeId = address.split(':')
+
+        shadeUrl = 'http://' + hubHostname + '/api/shades/' + shadeId
+
+        body = {
+            'shade': {
+                'id': shadeId,
+                'positions': {
+                    'position1': bottom,
+                    'posKind1': 1,
+                    'position2': top,
+                    'posKind2': 2
+                }
+            }
+        }
+
+        self.putJSON(shadeUrl, body)
