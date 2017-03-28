@@ -38,39 +38,18 @@ class Plugin(indigo.PluginBase):
 
         apiUrl = 'http://' + hub.address + '/api/'
 
-        roomsUrl            = apiUrl + 'rooms'
-        scenesUrl           = apiUrl + 'scenes'
-        scenecollectionsUrl = apiUrl + 'scenecollections'
-        shadesUrl           = apiUrl + 'shades'
-
-        response = self.getJSON(roomsUrl)
-
-        roomIds = response['roomIds']
-
-        state.append({'key': 'roomCount', 'value': len(roomIds)})
-
-        response = self.getJSON(scenesUrl)
-
-        sceneIds = response['sceneIds']
-
-        state.append({'key': 'sceneCount', 'value': len(sceneIds)})
-
-        response = self.getJSON(scenecollectionsUrl)
-
-        sceneCollectionIds = response['sceneCollectionIds']
-
-        state.append({'key': 'sceneCollectionCount', 'value': len(sceneCollectionIds)})
+        shadesUrl = apiUrl + 'shades'
 
         response = self.getJSON(shadesUrl)
 
         shadeIds = response['shadeIds']
 
-        state.append({'key': 'shadeCount', 'value': len(shadeIds)})
-
-        hub.updateStatesOnServer(state)
-
         for shadeId in shadeIds:
             self.createShade(hub.address, shadeId)
+
+        roomsUrl            = apiUrl + 'rooms'
+        scenesUrl           = apiUrl + 'scenes'
+        scenecollectionsUrl = apiUrl + 'scenecollections'
 
     def updateShade(self, shade):
         self.debugLog('Updating shade ' + shade.address)

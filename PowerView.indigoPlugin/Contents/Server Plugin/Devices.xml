@@ -10,28 +10,6 @@
         <Label>Hostname/IP:</Label>
       </Field>
     </ConfigUI>
-    <States>
-      <State id="roomCount">
-        <ValueType>Number</ValueType>
-        <TriggerLabel>PowerView Scenes</TriggerLabel>
-        <ControlPageLabel>PowerView Scenes</ControlPageLabel>
-      </State>
-      <State id="sceneCount">
-        <ValueType>Number</ValueType>
-        <TriggerLabel>PowerView Shades</TriggerLabel>
-        <ControlPageLabel>PowerView Shades</ControlPageLabel>
-      </State>
-      <State id="sceneCollectionCount">
-        <ValueType>Number</ValueType>
-        <TriggerLabel>PowerView Shades</TriggerLabel>
-        <ControlPageLabel>PowerView Shades</ControlPageLabel>
-      </State>
-      <State id="shadeCount">
-        <ValueType>Number</ValueType>
-        <TriggerLabel>PowerView Shades</TriggerLabel>
-        <ControlPageLabel>PowerView Shades</ControlPageLabel>
-      </State>
-    </States>
   </Device>
   <Device type="custom" id="PowerViewShade">
     <Name>PowerView Shade</Name>
