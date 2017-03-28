@@ -118,16 +118,6 @@ class Plugin(indigo.PluginBase):
 
         return data
 
-    def listShades(self, filter="", values=None, typeId="", targetId=0):
-        shades = []
-
-        #shades = list(filter(lambda d: d.deviceTypeId == 'PowerViewShade', indigo.devices))
-        for device in indigo.devices.itervalues():
-            if device.deviceTypeId == 'PowerViewShade':
-                shades.append((device.address, device.name))
-
-        return shades
-
     def putJSON(self, url, data):
         body = json.dumps(data)
 
@@ -150,12 +140,15 @@ class Plugin(indigo.PluginBase):
         return response
 
     def setShadePosition(self, action):
-        address = action.props.get('address', None)
-        top     = action.props.get('top',    '')
-        bottom  = action.props.get('bottom', '')
+        deviceId = action.props.get('deviceId', None)
+        top      = action.props.get('top',    '')
+        bottom   = action.props.get('bottom', '')
 
-        self.debugLog('Setting position of ' + address +
+        self.debugLog('Setting position of ' + deviceId +
                       ' top: ' + top + ', bottom: ' + bottom)
+
+        shade   = indigo.devices[int(deviceId)]
+        address = shade.address
 
         hubHostname, shadeId = address.split(':')
 
