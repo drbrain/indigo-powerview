@@ -66,9 +66,46 @@ shade IDs.
 Returns the shade object for a single shade in the `shade` key and all other
 shades in the `shadeData` key.
 
+`GET http://powerview/api/shade/SHADE_ID?updateBatteryLevel=true`
+
+Updates the battery level of the shade.  This will jog the shade.
+
 `PUT http://powerview/api/shade/SHADE_ID`
 
-Sets the shade position.
+With a shade object with a `positions` object, sets the shade position.
+
+```
+{
+    "shade": {
+        "positions": {
+            "posKind1": 1,
+            "posKind2": 2,
+            "position1": 32000,
+            "position2": 32000
+        }
+    }
+}
+```
+
+With a shade object with a `motion` key of `"jog"`, jogs the shade:
+
+```
+{
+    "shade": {
+        "motion": "jog"
+    }
+}
+```
+
+With a shade object with a `motion` key of `"calibrate"`, calibrates the shade:
+
+```
+{
+    "shade": {
+        "motion": "calibrate"
+    }
+}
+```
 
 ### Room
 
