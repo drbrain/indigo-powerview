@@ -16,6 +16,11 @@ This document uses `UPPERCASE` letters in URLs to indicate a variable field.
 For example, in `GET http://powerview/api/shade/SHADE_ID` the `SHADE_ID` is the
 variable field that would be filled in with a shade ID number.
 
+### Hub discovery
+
+The PowerView hub responds to a NetBios Name Service name query for a
+`PBDU-Hub3.0` type NB (0x20) class IN (0x1).
+
 ### Shade
 
 This is a shade object:
