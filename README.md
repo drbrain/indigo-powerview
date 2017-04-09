@@ -159,17 +159,17 @@ This is a scene object:
 * `name` is the base64 encoded scene name
 * `roomId` is the room the scene is in
 
-`GET http://powerview/scenes`
+`GET http://powerview/api/scenes`
 
 Returns all scene data.  The response contains two top-level keys.  `sceneData`
 contains an array of scene objects while the `sceneIds` contains an array of
 scene IDs.
 
-`GET http://poverview/scenes?scene=SCENE_ID`
+`GET http://poverview/api/scenes?sceneid=SCENE_ID`
 
 Activate scene with the given scene id.
 
-`GET http://powerview/scenes/SCENE_ID`
+`GET http://powerview/api/scenes/SCENE_ID`
 
 Returns the scene object for a single scene in the `scene` key.  The
 `sceneData` key contains all other scenes.
@@ -193,13 +193,13 @@ This is a scene collection object:
 * `id` is the scene collection ID
 * `name` is the base64 encoded scene collection name
 
-`GET http://powerview/scenecollections`
+`GET http://powerview/api/scenecollections`
 
 Returns all scene collection data.  The response contains two top-level keys.
 `sceneCollectionData` contains an array of scene collection objects while the
 `sceneCollectionIds` contains an array of scene collection IDs.
 
-`GET http://powerview/scenecollections/SCENE_COLLECTION_ID`
+`GET http://powerview/api/scenecollections/SCENE_COLLECTION_ID`
 
 Returns the scene collection object for a single scene collection in the
 `sceneCollection` key.  The `sceneCollectionData` key contains all other scenes
