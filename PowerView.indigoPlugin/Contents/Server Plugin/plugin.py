@@ -14,16 +14,27 @@ class Plugin(indigo.PluginBase):
 
         self.debug = pluginPrefs.get('debug', False)
 
-        self.deviceList = []
+        self.devices = {}
+
+    def activateScene(self, action):
+        hub = indigo.devices[action.deviceId]
+        sceneId = action.props['sceneId']
+
+        self.debugLog('activate scene %s on hub %s' % (sceneId, hub.address))
+
+        activateSceneUrl = \
+          'http://' + hub.address + '/api/scenes?sceneid=' + sceneId
+
+        self.getJSON(activateSceneUrl)
 
     def deviceStartComm(self, device):
-        if device.id not in self.deviceList:
+        if device.id not in self.devices:
+            self.devices[device.id] = device
             self.update(device)
-            self.deviceList.append(device.id)
 
     def deviceStopComm(self, device):
-        if device.id in self.deviceList:
-            self.deviceList.remove(device.id)
+        if device.id in self.devices:
+            self.devices.pop(device.id)
 
     def update(self, device):
         if device.deviceTypeId == 'PowerViewHub':
@@ -102,6 +113,13 @@ class Plugin(indigo.PluginBase):
 
         return response
 
+    def getRoomData(self, hubHostname, roomId):
+        roomUrl = 'http://' + hubHostname + '/api/rooms/' + str(roomId)
+
+        data = self.getJSON(roomUrl)['room']
+
+        return data
+
     def getShadeData(self, hubHostname, shadeId):
         shadeUrl = 'http://' + hubHostname + '/api/shades/' + shadeId
 
@@ -117,6 +135,29 @@ class Plugin(indigo.PluginBase):
             data.update(shadePositions)
 
         return data
+
+    def listScenes(self, filter="", valuesDict="", type="", targetId=0):
+        self.debugLog('devices: %s' % self.devices.keys())
+        self.debugLog('target: %s' % targetId)
+        hub = self.devices[targetId]
+
+        shadesUrl = 'http://' + hub.address + '/api/scenes/'
+
+        data = self.getJSON(shadesUrl)['sceneData']
+
+        list = []
+
+        for scene in data:
+            room = self.getRoomData(hub.address, scene['roomId'])
+
+            roomName  = base64.b64decode(room['name'])
+            sceneName = base64.b64decode(scene['name'])
+
+            list.append([scene['id'], '%s - %s' % (roomName, sceneName)])
+
+        list = sorted(list, key=lambda pair: pair[1])
+
+        return list
 
     def putJSON(self, url, data):
         body = json.dumps(data)

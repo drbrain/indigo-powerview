@@ -1,5 +1,15 @@
 <?xml version="1.0"?>
 <Actions>
+  <Action id="activateScene" deviceFilter="self.PowerViewHub">
+    <Name>Activate Scene</Name>
+    <CallbackMethod>activateScene</CallbackMethod>
+    <ConfigUI>
+      <Field id="sceneId" type="menu">
+        <Label>Scenes</Label>
+        <List class="self" method="listScenes"/>
+      </Field>
+    </ConfigUI>
+  </Action>
   <Action id="setShadePosition">
     <Name>Set Shade Position</Name>
     <CallbackMethod>setShadePosition</CallbackMethod>
