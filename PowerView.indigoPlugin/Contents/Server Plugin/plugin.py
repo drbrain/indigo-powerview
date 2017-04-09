@@ -31,10 +31,7 @@ class Plugin(indigo.PluginBase):
 
         self.debugLog('activate scene collection %s on hub %s' % (sceneCollectionId, hub.address))
 
-        activateSceneCollectionUrl = \
-                'http://%s/api/scenecollections?scenecollectionid=%s' % (hub.address, sceneCollectionId)
-
-        self.powerview.getJSON(activateSceneCollectionUrl)
+        self.powerview.activateSceneCollection(hub.address, sceneCollectionId)
 
     def deviceStartComm(self, device):
         if device.id not in self.devices:

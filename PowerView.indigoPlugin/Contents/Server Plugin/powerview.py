@@ -9,6 +9,12 @@ class PowerView:
 
         self.getJSON(activateSceneUrl)
 
+    def activateSceneCollection(self, hubHostname, sceneCollectionId):
+        activateSceneCollectionUrl = \
+                'http://%s/api/scenecollections?scenecollectionid=%s' % (hubHostname, sceneCollectionId)
+
+        self.getJSON(activateSceneCollectionUrl)
+
     def getJSON(self, url):
         try:
             f = urllib2.urlopen(url)
