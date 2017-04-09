@@ -66,7 +66,7 @@ class Plugin(indigo.PluginBase):
 
         hubHostname, shadeId = shade.address.split(':')
 
-        data = self.powerview.shadeData(hubHostname, shadeId)
+        data = self.powerview.shade(hubHostname, shadeId)
         data.pop('name') # don't overwrite local changes
 
         for key, value in data.iteritems():
@@ -82,7 +82,7 @@ class Plugin(indigo.PluginBase):
 
         self.debugLog('Creating shade %s' % address)
 
-        data = self.powerview.shadeData(hubHostname, shadeId)
+        data = self.powerview.shade(hubHostname, shadeId)
         name = data.pop('name')
 
         self.debugLog('Creating shade %s' % address)

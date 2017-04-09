@@ -49,7 +49,7 @@ class PowerView:
 
         return response
 
-    def roomData(self, hubHostname, roomId):
+    def room(self, hubHostname, roomId):
         roomUrl = 'http://%s/api/rooms/%s' % (hubHostname, roomId)
 
         data = self.getJSON(roomUrl)['room']
@@ -82,7 +82,7 @@ class PowerView:
         for scene in data:
             name = base64.b64decode(scene.pop('name'))
 
-            room = self.roomData(hubHostname, scene['roomId'])
+            room = self.room(hubHostname, scene['roomId'])
 
             scene['name'] = '%s - %s' % (room['name'], name)
 
@@ -100,7 +100,7 @@ class PowerView:
 
         return data
 
-    def shadeData(self, hubHostname, shadeId):
+    def shade(self, hubHostname, shadeId):
         shadeUrl = 'http://%s/api/shades/%s' % (hubHostname, shadeId)
 
         data = self.getJSON(shadeUrl)['shade']
