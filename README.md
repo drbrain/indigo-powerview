@@ -34,10 +34,10 @@ This is a shade object:
     "name": "U2hhZGUgbmFtZQ==",
     "order": 0,
     "positions": {
-	"posKind1": 1,
-	"posKind2": 2,
-	"position1": 0,
-	"position2": 0
+        "posKind1": 1,
+        "posKind2": 2,
+        "position1": 0,
+        "position2": 0
     },
     "roomId": 11,
     "type": 8
