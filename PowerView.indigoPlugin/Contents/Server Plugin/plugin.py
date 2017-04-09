@@ -137,18 +137,4 @@ class Plugin(indigo.PluginBase):
 
         hubHostname, shadeId = shade.address.split(':')
 
-        shadeUrl = 'http://%s/api/shades/%s' % (hubHostname, shadeId)
-
-        body = {
-            'shade': {
-                'id': shadeId,
-                'positions': {
-                    'position1': bottom,
-                    'posKind1': 1,
-                    'position2': top,
-                    'posKind2': 2
-                }
-            }
-        }
-
-        self.powerview.putJSON(shadeUrl, body)
+        self.powerview.setShadePosition(hubHostname, shadeId, top, bottom)

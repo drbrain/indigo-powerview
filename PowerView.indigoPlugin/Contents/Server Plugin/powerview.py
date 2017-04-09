@@ -58,6 +58,22 @@ class PowerView:
 
         return data
 
+    def setShadePosition(self, hubHostname, shadeId, top, bottom):
+        shadeUrl = 'http://%s/api/shades/%s' % (hubHostname, shadeId)
+
+        body = {
+            'shade': {
+                'positions': {
+                    'position1': bottom,
+                    'posKind1': 1,
+                    'position2': top,
+                    'posKind2': 2
+                }
+            }
+        }
+
+        self.putJSON(shadeUrl, body)
+
     def scenes(self, hubHostname):
         scenesURL = 'http://%s/api/scenes/' % (hubHostname)
 
