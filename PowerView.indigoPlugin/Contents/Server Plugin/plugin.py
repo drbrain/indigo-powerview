@@ -132,18 +132,12 @@ class Plugin(indigo.PluginBase):
     def listScenes(self, filter="", valuesDict="", type="", targetId=0):
         hub = self.devices[targetId]
 
-        scenesURL = 'http://%s/api/scenes/' % (hub.address)
-
-        data = self.powerview.getJSON(scenesURL)['sceneData']
+        scenes = self.powerview.scenes(hub.address)
 
         list = []
 
-        for scene in data:
-            room = self.powerview.roomData(hub.address, scene['roomId'])
-
-            sceneName = base64.b64decode(scene['name'])
-
-            list.append([scene['id'], '%s - %s' % (room['name'], sceneName)])
+        for scene in scenes:
+            list.append([scene['id'], scene['name']])
 
         list = sorted(list, key=lambda pair: pair[1])
 
