@@ -3,8 +3,7 @@
 
 import base64
 import indigo
-import simplejson as json
-import urllib2
+from powerview import *
 
 class Plugin(indigo.PluginBase):
     def __init__(self, pluginId, pluginDisplayName, pluginVersion,
@@ -16,6 +15,8 @@ class Plugin(indigo.PluginBase):
 
         self.devices = {}
 
+        self.powerview = PowerView()
+
     def activateScene(self, action):
         hub = indigo.devices[action.deviceId]
         sceneId = action.props['sceneId']
@@ -25,7 +26,7 @@ class Plugin(indigo.PluginBase):
         activateSceneUrl = \
                 'http://%s/api/scenes?sceneid=%s' % (hub.address, sceneId)
 
-        self.getJSON(activateSceneUrl)
+        self.powerview.getJSON(activateSceneUrl)
 
     def activateSceneCollection(self, action):
         hub = indigo.devices[action.deviceId]
@@ -36,7 +37,7 @@ class Plugin(indigo.PluginBase):
         activateSceneCollectionUrl = \
                 'http://%s/api/scenecollections?scenecollectionid=%s' % (hub.address, sceneCollectionId)
 
-        self.getJSON(activateSceneCollectionUrl)
+        self.powerview.getJSON(activateSceneCollectionUrl)
 
     def deviceStartComm(self, device):
         if device.id not in self.devices:
@@ -60,7 +61,7 @@ class Plugin(indigo.PluginBase):
 
         shadesUrl = 'http://%s/api/shades/' % hub.address
 
-        response = self.getJSON(shadesUrl)
+        response = self.powerview.getJSON(shadesUrl)
 
         shadeIds = response['shadeIds']
 
@@ -105,30 +106,17 @@ class Plugin(indigo.PluginBase):
 
         return None
 
-    def getJSON(self, url):
-        try:
-            f = urllib2.urlopen(url)
-        except urllib2.HTTPError, e:
-            self.errorLog('Error fetching %s: %s' % (url, str(e)))
-            return;
-
-        response = json.load(f)
-
-        f.close()
-
-        return response
-
     def getRoomData(self, hubHostname, roomId):
         roomUrl = 'http://%s/api/rooms/%s' % (hubHostname, roomId)
 
-        data = self.getJSON(roomUrl)['room']
+        data = self.powerview.getJSON(roomUrl)['room']
 
         return data
 
     def getShadeData(self, hubHostname, shadeId):
         shadeUrl = 'http://%s/api/shades/%s' % (hubHostname, shadeId)
 
-        data = self.getJSON(shadeUrl)['shade']
+        data = self.powerview.getJSON(shadeUrl)['shade']
         data.pop('id')
 
         data['name']    = base64.b64decode(data.pop('name'))
@@ -147,7 +135,7 @@ class Plugin(indigo.PluginBase):
         sceneCollectionsUrl = \
                 'http://%s/api/scenecollections/' % (hub.address)
 
-        data = self.getJSON(sceneCollectionsUrl)['sceneCollectionData']
+        data = self.powerview.getJSON(sceneCollectionsUrl)['sceneCollectionData']
 
         list = []
 
@@ -165,7 +153,7 @@ class Plugin(indigo.PluginBase):
 
         scenesURL = 'http://%s/api/scenes/' % (hub.address)
 
-        data = self.getJSON(scenesURL)['sceneData']
+        data = self.powerview.getJSON(scenesURL)['sceneData']
 
         list = []
 
@@ -180,27 +168,6 @@ class Plugin(indigo.PluginBase):
         list = sorted(list, key=lambda pair: pair[1])
 
         return list
-
-    def putJSON(self, url, data):
-        body = json.dumps(data)
-
-        request = urllib2.Request(url, data=body)
-        request.add_header('Content-Type', 'application/json')
-        request.get_method = lambda: "PUT"
-
-        opener = urllib2.build_opener(urllib2.HTTPHandler)
-
-        try:
-            f = opener.open(request)
-        except urllib2.HTTPError, e:
-            self.errorLog('Error fetching %s: %s' % (url, str(e)))
-            return;
-
-        response = json.load(f)
-
-        f.close()
-
-        return response
 
     def setShadePosition(self, action):
         shade  = indigo.devices[action.deviceId]
@@ -225,4 +192,4 @@ class Plugin(indigo.PluginBase):
             }
         }
 
-        self.putJSON(shadeUrl, body)
+        self.powerview.putJSON(shadeUrl, body)
