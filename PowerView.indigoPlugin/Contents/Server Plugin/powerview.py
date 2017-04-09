@@ -60,6 +60,18 @@ class PowerView:
 
         return data
 
+    def sceneCollections(self, hubHostname):
+        sceneCollectionsUrl = \
+                'http://%s/api/scenecollections/' % (hubHostname)
+
+        data = self.getJSON(sceneCollectionsUrl)['sceneCollectionData']
+
+        for sceneCollection in data:
+            sceneCollection['name'] = \
+                    base64.b64decode(sceneCollection.pop('name'))
+
+        return data
+
     def shadeData(self, hubHostname, shadeId):
         shadeUrl = 'http://%s/api/shades/%s' % (hubHostname, shadeId)
 
