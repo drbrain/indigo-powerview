@@ -203,16 +203,13 @@ class Plugin(indigo.PluginBase):
         return response
 
     def setShadePosition(self, action):
-        deviceId = action.props.get('deviceId', None)
-        top      = action.props.get('top',    '')
-        bottom   = action.props.get('bottom', '')
+        shade  = indigo.devices[action.deviceId]
+        top    = action.props.get('top',    '')
+        bottom = action.props.get('bottom', '')
 
-        self.debugLog('Setting position of %s top: %s, bottom: %s' % (deviceId, top, bottom))
+        self.debugLog('Setting position of %s top: %s, bottom: %s' % (action.deviceId, top, bottom))
 
-        shade   = indigo.devices[int(deviceId)]
-        address = shade.address
-
-        hubHostname, shadeId = address.split(':')
+        hubHostname, shadeId = shade.address.split(':')
 
         shadeUrl = 'http://%s/api/shades/%s' % (hubHostname, shadeId)
 

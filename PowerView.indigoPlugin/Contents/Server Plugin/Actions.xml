@@ -20,14 +20,10 @@
       </Field>
     </ConfigUI>
   </Action>
-  <Action id="setShadePosition">
+  <Action id="setShadePosition" deviceFilter="self.PowerViewShade">
     <Name>Set Shade Position</Name>
     <CallbackMethod>setShadePosition</CallbackMethod>
     <ConfigUI>
-      <Field id="deviceId" type="menu">
-        <Label>Device</Label>
-        <List class="indigo.devices" filter="self.PowerViewShade"/>
-      </Field>
       <Field id="top" type="textfield">
         <Label>Top</Label>
       </Field>
