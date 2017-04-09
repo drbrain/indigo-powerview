@@ -167,8 +167,6 @@ class Plugin(indigo.PluginBase):
         return list
 
     def listScenes(self, filter="", valuesDict="", type="", targetId=0):
-        self.debugLog('devices: %s' % self.devices.keys())
-        self.debugLog('target: %s' % targetId)
         hub = self.devices[targetId]
 
         shadesUrl = 'http://' + hub.address + '/api/scenes/'
