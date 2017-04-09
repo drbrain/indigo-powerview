@@ -1,3 +1,4 @@
+import base64
 import simplejson as json
 import urllib2
 
@@ -35,4 +36,13 @@ class PowerView:
         f.close()
 
         return response
+
+    def roomData(self, hubHostname, roomId):
+        roomUrl = 'http://%s/api/rooms/%s' % (hubHostname, roomId)
+
+        data = self.getJSON(roomUrl)['room']
+
+        data['name'] = base64.b64decode(data.pop('name'))
+
+        return data
 

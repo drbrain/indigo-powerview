@@ -106,13 +106,6 @@ class Plugin(indigo.PluginBase):
 
         return None
 
-    def getRoomData(self, hubHostname, roomId):
-        roomUrl = 'http://%s/api/rooms/%s' % (hubHostname, roomId)
-
-        data = self.powerview.getJSON(roomUrl)['room']
-
-        return data
-
     def getShadeData(self, hubHostname, shadeId):
         shadeUrl = 'http://%s/api/shades/%s' % (hubHostname, shadeId)
 
@@ -158,12 +151,11 @@ class Plugin(indigo.PluginBase):
         list = []
 
         for scene in data:
-            room = self.getRoomData(hub.address, scene['roomId'])
+            room = self.powerview.roomData(hub.address, scene['roomId'])
 
-            roomName  = base64.b64decode(room['name'])
             sceneName = base64.b64decode(scene['name'])
 
-            list.append([scene['id'], '%s - %s' % (roomName, sceneName)])
+            list.append([scene['id'], '%s - %s' % (room['name'], sceneName)])
 
         list = sorted(list, key=lambda pair: pair[1])
 
