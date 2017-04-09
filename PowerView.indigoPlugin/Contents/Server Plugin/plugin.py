@@ -23,7 +23,7 @@ class Plugin(indigo.PluginBase):
         self.debugLog('activate scene %s on hub %s' % (sceneId, hub.address))
 
         activateSceneUrl = \
-          'http://' + hub.address + '/api/scenes?sceneid=' + sceneId
+                'http://%s/api/scenes?sceneid=%s' % (hub.address, sceneId)
 
         self.getJSON(activateSceneUrl)
 
@@ -34,7 +34,7 @@ class Plugin(indigo.PluginBase):
         self.debugLog('activate scene collection %s on hub %s' % (sceneCollectionId, hub.address))
 
         activateSceneCollectionUrl = \
-          'http://' + hub.address + '/api/scenecollections?scenecollectionid=' + sceneCollectionId
+                'http://%s/api/scenecollections?scenecollectionid=%s' % (hub.address, sceneCollectionId)
 
         self.getJSON(activateSceneCollectionUrl)
 
@@ -56,11 +56,9 @@ class Plugin(indigo.PluginBase):
     def updateHub(self, hub):
         state       = []
 
-        self.debugLog('Updating hub ' + hub.address)
+        self.debugLog('Updating hub %s' % hub.address)
 
-        apiUrl = 'http://' + hub.address + '/api/'
-
-        shadesUrl = apiUrl + 'shades'
+        shadesUrl = 'http://%s/api/shades/' % hub.address
 
         response = self.getJSON(shadesUrl)
 
@@ -69,12 +67,8 @@ class Plugin(indigo.PluginBase):
         for shadeId in shadeIds:
             self.createShade(hub.address, shadeId)
 
-        roomsUrl            = apiUrl + 'rooms'
-        scenesUrl           = apiUrl + 'scenes'
-        scenecollectionsUrl = apiUrl + 'scenecollections'
-
     def updateShade(self, shade):
-        self.debugLog('Updating shade ' + shade.address)
+        self.debugLog('Updating shade %s' % shade.address)
 
         if shade.address == '':
             return
@@ -88,7 +82,7 @@ class Plugin(indigo.PluginBase):
             shade.updateStateOnServer(key, value)
 
     def createShade(self, hubHostname, shadeId):
-        address = hubHostname + ':' + str(shadeId)
+        address = '%s:%s' % (hubHostname, shadeId)
 
         if self.findShade(address):
             return;
@@ -96,7 +90,7 @@ class Plugin(indigo.PluginBase):
         data = self.getShadeData(hubHostname, str(shadeId))
         name = data.pop('name')
 
-        self.debugLog('Creating shade ' + address)
+        self.debugLog('Creating shade %s' % address)
 
         indigo.device.create(
                 protocol = indigo.kProtocol.Plugin,
@@ -125,14 +119,14 @@ class Plugin(indigo.PluginBase):
         return response
 
     def getRoomData(self, hubHostname, roomId):
-        roomUrl = 'http://' + hubHostname + '/api/rooms/' + str(roomId)
+        roomUrl = 'http://%s/api/rooms/%s' % (hubHostname, roomId)
 
         data = self.getJSON(roomUrl)['room']
 
         return data
 
     def getShadeData(self, hubHostname, shadeId):
-        shadeUrl = 'http://' + hubHostname + '/api/shades/' + shadeId
+        shadeUrl = 'http://%s/api/shades/%s' % (hubHostname, shadeId)
 
         data = self.getJSON(shadeUrl)['shade']
         data.pop('id')
@@ -151,7 +145,7 @@ class Plugin(indigo.PluginBase):
         hub = self.devices[targetId]
 
         sceneCollectionsUrl = \
-                'http://' + hub.address + '/api/scenecollections/'
+                'http://%s/api/scenecollections/' % (hub.address)
 
         data = self.getJSON(sceneCollectionsUrl)['sceneCollectionData']
 
@@ -169,9 +163,9 @@ class Plugin(indigo.PluginBase):
     def listScenes(self, filter="", valuesDict="", type="", targetId=0):
         hub = self.devices[targetId]
 
-        shadesUrl = 'http://' + hub.address + '/api/scenes/'
+        scenesURL = 'http://%s/api/scenes/' % (hub.address)
 
-        data = self.getJSON(shadesUrl)['sceneData']
+        data = self.getJSON(scenesURL)['sceneData']
 
         list = []
 
@@ -213,15 +207,14 @@ class Plugin(indigo.PluginBase):
         top      = action.props.get('top',    '')
         bottom   = action.props.get('bottom', '')
 
-        self.debugLog('Setting position of ' + deviceId +
-                      ' top: ' + top + ', bottom: ' + bottom)
+        self.debugLog('Setting position of %s top: %s, bottom: %s' % (deviceId, top, bottom))
 
         shade   = indigo.devices[int(deviceId)]
         address = shade.address
 
         hubHostname, shadeId = address.split(':')
 
-        shadeUrl = 'http://' + hubHostname + '/api/shades/' + shadeId
+        shadeUrl = 'http://%s/api/shades/%s' % (hubHostname, shadeId)
 
         body = {
             'shade': {
