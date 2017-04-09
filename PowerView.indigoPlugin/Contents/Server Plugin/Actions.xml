@@ -10,6 +10,16 @@
       </Field>
     </ConfigUI>
   </Action>
+  <Action id="activateSceneCollection" deviceFilter="self.PowerViewHub">
+    <Name>Activate Scene Collection</Name>
+    <CallbackMethod>activateSceneCollection</CallbackMethod>
+    <ConfigUI>
+      <Field id="sceneCollectionId" type="menu">
+        <Label>ScenesCollection</Label>
+        <List class="self" method="listSceneCollections"/>
+      </Field>
+    </ConfigUI>
+  </Action>
   <Action id="setShadePosition">
     <Name>Set Shade Position</Name>
     <CallbackMethod>setShadePosition</CallbackMethod>

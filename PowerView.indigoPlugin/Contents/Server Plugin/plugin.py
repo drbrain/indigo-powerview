@@ -27,6 +27,17 @@ class Plugin(indigo.PluginBase):
 
         self.getJSON(activateSceneUrl)
 
+    def activateSceneCollection(self, action):
+        hub = indigo.devices[action.deviceId]
+        sceneCollectionId = action.props['sceneCollectionId']
+
+        self.debugLog('activate scene collection %s on hub %s' % (sceneCollectionId, hub.address))
+
+        activateSceneCollectionUrl = \
+          'http://' + hub.address + '/api/scenecollections?scenecollectionid=' + sceneCollectionId
+
+        self.getJSON(activateSceneCollectionUrl)
+
     def deviceStartComm(self, device):
         if device.id not in self.devices:
             self.devices[device.id] = device
@@ -135,6 +146,25 @@ class Plugin(indigo.PluginBase):
             data.update(shadePositions)
 
         return data
+
+    def listSceneCollections(self, filter="", valuesDict="", type="", targetId=0):
+        hub = self.devices[targetId]
+
+        sceneCollectionsUrl = \
+                'http://' + hub.address + '/api/scenecollections/'
+
+        data = self.getJSON(sceneCollectionsUrl)['sceneCollectionData']
+
+        list = []
+
+        for sceneCollection in data:
+            name = base64.b64decode(sceneCollection['name'])
+
+            list.append([sceneCollection['id'], name])
+
+        list = sorted(list, key=lambda pair: pair[1])
+
+        return list
 
     def listScenes(self, filter="", valuesDict="", type="", targetId=0):
         self.debugLog('devices: %s' % self.devices.keys())
