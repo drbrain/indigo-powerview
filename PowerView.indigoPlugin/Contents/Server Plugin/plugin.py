@@ -49,13 +49,9 @@ class Plugin(indigo.PluginBase):
             self.updateShade(device)
 
     def updateHub(self, hub):
-        state       = []
-
         self.debugLog('Updating hub %s' % hub.address)
 
-        shadesUrl = 'http://%s/api/shades/' % hub.address
-
-        response = self.powerview.getJSON(shadesUrl)
+        response = self.powerview.shades(hub.address)
 
         shadeIds = response['shadeIds']
 

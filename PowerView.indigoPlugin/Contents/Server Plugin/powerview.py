@@ -100,3 +100,10 @@ class PowerView:
 
         return data
 
+    def shades(self, hubHostname):
+        shadesUrl = 'http://%s/api/shades/' % hubHostname
+
+        data = self.getJSON(shadesUrl)
+
+        return data
+
