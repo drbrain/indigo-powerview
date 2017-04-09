@@ -165,6 +165,10 @@ Returns all scene data.  The response contains two top-level keys.  `sceneData`
 contains an array of scene objects while the `sceneIds` contains an array of
 scene IDs.
 
+`GET http://poverview/scenes?scene=SCENE_ID`
+
+Activate scene with the given scene id.
+
 `GET http://powerview/scenes/SCENE_ID`
 
 Returns the scene object for a single scene in the `scene` key.  The
