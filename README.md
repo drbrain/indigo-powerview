@@ -201,3 +201,45 @@ Returns the scene collection object for a single scene collection in the
 `sceneCollection` key.  The `sceneCollectionData` key contains all other scenes
 collections.
 
+### Hub information
+
+`GET http://powerview/api/userdata/`
+
+Returns hub information.
+
+```
+{
+    "userData": {
+        "accessPointCount": 0,
+        "addressKind": "newPrimary",
+        "dns": "192.0.2.1",
+        "editingEnabled": true,
+        "enableScheduledEvents": true,
+        "gateway": "192.0.2.1",
+        "groupCount": 2,
+        "hubName": "aHVi",
+        "ip": "192.0.2.2",
+        "localTimeDataSet": true,
+        "macAddress": "00:26:ff:ff:ff:ff",
+        "mask": "255.255.255.0",
+        "multiSceneCount": 3,
+        "multiSceneMemberCount": 5,
+        "remoteConnectEnabled": true,
+        "rfID": "0x1234",
+        "rfIDInt": 4660,
+        "rfStatus": 0,
+        "roomCount": 7,
+        "sceneControllerCount": 0,
+        "sceneControllerMemberCount": 0,
+        "sceneCount": 11,
+        "sceneMemberCount": 13,
+        "scheduledEventCount": 17,
+        "serialNumber": "0123456789ABCD",
+        "setupCompleted": false,
+        "shadeCount": 19,
+        "staticIp": false,
+        "unassignedShadeCount": 0,
+        "undefinedShadeCount": 0
+    }
+}
+```
