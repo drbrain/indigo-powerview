@@ -199,6 +199,10 @@ Returns all scene collection data.  The response contains two top-level keys.
 `sceneCollectionData` contains an array of scene collection objects while the
 `sceneCollectionIds` contains an array of scene collection IDs.
 
+`GET http://powerview/api/scenecollections?scenecollectionid=SCENE_COLLECTION_ID`
+
+Activates the given scene collection id.
+
 `GET http://powerview/api/scenecollections/SCENE_COLLECTION_ID`
 
 Returns the scene collection object for a single scene collection in the
