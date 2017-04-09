@@ -3,6 +3,12 @@ import simplejson as json
 import urllib2
 
 class PowerView:
+    def activateScene(self, hubHostname, sceneId):
+        activateSceneUrl = \
+                'http://%s/api/scenes?sceneid=%s' % (hubHostname, sceneId)
+
+        self.getJSON(activateSceneUrl)
+
     def getJSON(self, url):
         try:
             f = urllib2.urlopen(url)

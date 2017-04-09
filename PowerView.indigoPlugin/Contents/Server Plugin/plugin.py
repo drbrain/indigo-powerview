@@ -23,10 +23,7 @@ class Plugin(indigo.PluginBase):
 
         self.debugLog('activate scene %s on hub %s' % (sceneId, hub.address))
 
-        activateSceneUrl = \
-                'http://%s/api/scenes?sceneid=%s' % (hub.address, sceneId)
-
-        self.powerview.getJSON(activateSceneUrl)
+        self.powerview.activateScene(hub.address, sceneId)
 
     def activateSceneCollection(self, action):
         hub = indigo.devices[action.deviceId]
