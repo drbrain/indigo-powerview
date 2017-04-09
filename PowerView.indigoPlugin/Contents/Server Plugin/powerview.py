@@ -46,3 +46,19 @@ class PowerView:
 
         return data
 
+    def shadeData(self, hubHostname, shadeId):
+        shadeUrl = 'http://%s/api/shades/%s' % (hubHostname, shadeId)
+
+        data = self.getJSON(shadeUrl)['shade']
+        data.pop('id')
+
+        data['name']         = base64.b64decode(data.pop('name'))
+        data['batteryLevel'] = data.pop('batteryStrength')
+
+        if 'positions' in data:
+            shadePositions = data.pop('positions')
+
+            data.update(shadePositions)
+
+        return data
+

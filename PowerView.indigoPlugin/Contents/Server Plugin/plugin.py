@@ -76,7 +76,7 @@ class Plugin(indigo.PluginBase):
 
         hubHostname, shadeId = shade.address.split(':')
 
-        data = self.getShadeData(hubHostname, str(shadeId))
+        data = self.powerview.shadeData(hubHostname, shadeId)
         data.pop('name') # don't overwrite local changes
 
         for key, value in data.iteritems():
@@ -86,9 +86,13 @@ class Plugin(indigo.PluginBase):
         address = '%s:%s' % (hubHostname, shadeId)
 
         if self.findShade(address):
+            self.debugLog('Shade %s already exists' % address)
+
             return;
 
-        data = self.getShadeData(hubHostname, str(shadeId))
+        self.debugLog('Creating shade %s' % address)
+
+        data = self.powerview.shadeData(hubHostname, shadeId)
         name = data.pop('name')
 
         self.debugLog('Creating shade %s' % address)
@@ -105,22 +109,6 @@ class Plugin(indigo.PluginBase):
                return device
 
         return None
-
-    def getShadeData(self, hubHostname, shadeId):
-        shadeUrl = 'http://%s/api/shades/%s' % (hubHostname, shadeId)
-
-        data = self.powerview.getJSON(shadeUrl)['shade']
-        data.pop('id')
-
-        data['name']    = base64.b64decode(data.pop('name'))
-        data['batteryLevel'] = data.pop('batteryStrength')
-
-        if 'positions' in data:
-            shadePositions = data.pop('positions')
-
-            data.update(shadePositions)
-
-        return data
 
     def listSceneCollections(self, filter="", valuesDict="", type="", targetId=0):
         hub = self.devices[targetId]
