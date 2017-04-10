@@ -42,14 +42,10 @@ class Plugin(indigo.PluginBase):
         if device.id in self.devices:
             self.devices.pop(device.id)
 
-    def update(self, device):
-        if device.deviceTypeId == 'PowerViewHub':
-            self.updateHub(device)
-        elif device.deviceTypeId == 'PowerViewShade':
-            self.updateShade(device)
+    def discoverShades(self, valuesDict, typeId, deviceId):
+        hub = indigo.devices[deviceId]
 
-    def updateHub(self, hub):
-        self.debugLog('Updating hub %s' % hub.address)
+        self.debugLog('Discovering shades on %s' % hub.address)
 
         response = self.powerview.shades(hub.address)
 
@@ -57,6 +53,10 @@ class Plugin(indigo.PluginBase):
 
         for shadeId in shadeIds:
             self.createShade(hub.address, shadeId)
+
+    def update(self, device):
+        if device.deviceTypeId == 'PowerViewShade':
+            self.updateShade(device)
 
     def updateShade(self, shade):
         self.debugLog('Updating shade %s' % shade.address)

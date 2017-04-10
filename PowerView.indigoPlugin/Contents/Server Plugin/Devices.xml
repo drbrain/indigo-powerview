@@ -9,6 +9,10 @@
       <Field type="textfield" id="address" defaultValue="192.0.2.1">
         <Label>Hostname/IP:</Label>
       </Field>
+      <Field type="button" id="discover">
+        <Title>Discover shades</Title>
+        <CallbackMethod>discoverShades</CallbackMethod>
+      </Field>
     </ConfigUI>
   </Device>
   <Device type="custom" id="PowerViewShade">
