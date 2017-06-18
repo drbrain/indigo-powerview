@@ -15,6 +15,17 @@ class PowerView:
 
         self.__GET(activateSceneCollectionUrl)
 
+    def jogShade(self, hubHostname, shadeId):
+        shadeUrl = 'http://%s/api/shades/%s' % (hubHostname, shadeId)
+
+        body = {
+            'shade': {
+                'motion': 'jog'
+            }
+        }
+
+        self.__PUT(shadeUrl, body)
+
     def room(self, hubHostname, roomId):
         roomUrl = 'http://%s/api/rooms/%s' % (hubHostname, roomId)
 

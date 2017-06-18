@@ -100,6 +100,15 @@ class Plugin(indigo.PluginBase):
 
         return None
 
+    def jogShade(self, action):
+        shade  = indigo.devices[action.deviceId]
+
+        self.debugLog('Jogging shade %s' % (action.deviceId))
+
+        hubHostname, shadeId = shade.address.split(':')
+
+        self.powerview.jogShade(hubHostname, shadeId)
+
     def listSceneCollections(self, filter="", valuesDict="", type="", targetId=0):
         hub = self.devices[targetId]
 

@@ -20,6 +20,10 @@
       </Field>
     </ConfigUI>
   </Action>
+  <Action id="jogShade" deviceFilter="self.PowerViewShade">
+    <Name>Jog Shade</Name>
+    <CallbackMethod>jogShade</CallbackMethod>
+  </Action>
   <Action id="setShadePosition" deviceFilter="self.PowerViewShade">
     <Name>Set Shade Position</Name>
     <CallbackMethod>setShadePosition</CallbackMethod>

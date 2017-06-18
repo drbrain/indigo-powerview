@@ -36,6 +36,11 @@ Activate a scene collection you have created in the PowerView mobile app.
 This allows you to reuse your existing PowerView scenes collections without
 having to recreate them in Indigo.
 
+### Jog Shade
+
+Moves the shade a tiny bit.  This helps you identify which shade the device is
+interacting with.
+
 ### Set Shade Position
 
 Set the shade position of an individual shade.  This allows you to set the top
