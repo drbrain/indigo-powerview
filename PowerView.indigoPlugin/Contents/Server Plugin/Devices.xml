@@ -17,6 +17,17 @@
   </Device>
   <Device type="custom" id="PowerViewShade">
     <Name>PowerView Shade</Name>
+    <ConfigUI>
+      <Field type="label" id="title">
+        <Label>PowerView Shade Settings</Label>
+      </Field>
+      <Field type="textfield" id="heading">
+        <Label>Window heading:</Label>
+      </Field>
+      <Field type="label" id="headingTitle">
+        <Label>In degrees from true north and perpendicular to the where the shade is mounted.  Use this for auto-closing shades on sun direction.</Label>
+      </Field>
+    </ConfigUI>
     <States>
       <State id="position1">
         <ValueType>Number</ValueType>
