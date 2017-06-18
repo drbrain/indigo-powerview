@@ -56,5 +56,11 @@ Set the shade position of an individual shade.  This allows you to set the top
 and bottom positions of a shade for a top-down, bottom-up shade or the shade
 position for a single-direction shade.
 
+## See also
+
+Hunter Douglas doesn't seem to have documentation for the hub API so please
+see the unofficial [PowerView Hub API][hub_api]
+
 [hd_powerview]: https://www.hunterdouglas.com/operating-systems/powerview-motorization
-[indigo]:http://www.indigodomo.com
+[indigo]: http://www.indigodomo.com
+[hub_api]: PowerView+API.md
