@@ -15,6 +15,17 @@ class PowerView:
 
         self.__GET(activateSceneCollectionUrl)
 
+    def calibrateShade(self, hubHostname, shadeId):
+        shadeUrl = 'http://%s/api/shades/%s' % (hubHostname, shadeId)
+
+        body = {
+            'shade': {
+                'motion': 'calibrate'
+            }
+        }
+
+        self.__PUT(shadeUrl, body)
+
     def jogShade(self, hubHostname, shadeId):
         shadeUrl = 'http://%s/api/shades/%s' % (hubHostname, shadeId)
 

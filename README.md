@@ -36,6 +36,10 @@ Activate a scene collection you have created in the PowerView mobile app.
 This allows you to reuse your existing PowerView scenes collections without
 having to recreate them in Indigo.
 
+### Calibrate Shade
+
+Rediscovers the movement limits of the shade.
+
 ### Jog Shade
 
 Moves the shade a tiny bit.  This helps you identify which shade the device is
