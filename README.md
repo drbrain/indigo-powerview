@@ -18,7 +18,12 @@ hub, and the Indigo software.
 ## Usage Notes
 
 The plugin does not poll the hub, so triggers based on the position (or any
-other attribute) of shades or the hub will not fire.
+other attribute) of shades or the hub will not execute when you expect.
+
+Polling the hub does not solve this as the hub does not have a long-term
+memory of shade positions.  To reliably know the shade positions you need to
+move the shade somehow (at least jog it) which shortens the battery life of
+the shades.
 
 ## Supported Actions
 
