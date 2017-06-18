@@ -35,8 +35,14 @@
       <Field id="top" type="textfield">
         <Label>Top</Label>
       </Field>
+      <Field type="label" id="topDescription">
+        <Label>Position of top of shade (for top-down).  0–65535</Label>
+      </Field>
       <Field id="bottom" type="textfield">
         <Label>Bottom</Label>
+      </Field>
+      <Field type="label" id="bottomDescription">
+        <Label>Position of bottom of shade (for bottom-up).  0–65535</Label>
       </Field>
     </ConfigUI>
   </Action>
