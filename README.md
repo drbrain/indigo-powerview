@@ -8,22 +8,22 @@ hub, and the Indigo software.
 
 ## Features
 
-* Automatically discover shades for easy first-time setup
-* Adjust shade positions from Indigo-supported keypads
-* Adjust shades based on criteria beyond schedules including:
-  * Window-open sensors
-  * Interior or exterior temperature
-  * Sun angle
+Automatically shade discovery for easy first-time setup.  This also makes it
+easy to new shades, or the shade gets disconnected from the hub for some
+reason.  You can run the discovery process again then transfer the PowerView
+Hub ID in Indigo from the new shade device to the old shade device so all your
+actions continue to work.
 
-## Usage Notes
+Adjust shade positions from Indigo-supported keypads using the Set Shade
+Position, Activate Scene, or Activate Scene Collection actions.
 
-The plugin does not poll the hub, so triggers based on the position (or any
-other attribute) of shades or the hub will not execute when you expect.
+Adjust shades based on criteria beyond schedules including:
+* Window-open sensors to prevent shades from being blown around
+* Interior or exterior temperature to keep heat out of rooms you aren't using
+* Sun angle using the heading field of the shade device for automatic shading
+  based on season.
 
-Polling the hub does not solve this as the hub does not have a long-term
-memory of shade positions.  To reliably know the shade positions you need to
-move the shade somehow (at least jog it) which shortens the battery life of
-the shades.
+Mulitple hub support in case you have multiple hubs.
 
 ## Supported Actions
 
@@ -55,6 +55,16 @@ interacting with.
 Set the shade position of an individual shade.  This allows you to set the top
 and bottom positions of a shade for a top-down, bottom-up shade or the shade
 position for a single-direction shade.
+
+## Usage Notes
+
+The plugin does not poll the hub, so triggers based on the position (or any
+other attribute) of shades or the hub will not execute when you expect.
+
+Polling the hub does not solve this as the hub does not have a long-term
+memory of shade positions.  To reliably know the shade positions you need to
+move the shade somehow (at least jog it) which shortens the battery life of
+the shades.
 
 ## See also
 
