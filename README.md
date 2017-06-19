@@ -111,4 +111,4 @@ see the unofficial [PowerView Hub API][hub_api]
 [hd_powerview]: https://www.hunterdouglas.com/operating-systems/powerview-motorization
 [indigo]: http://www.indigodomo.com
 [cynical_weather]: http://www.cynic.org/indigo/plugins/online/weather.html
-[hub_api]: PowerView+API.md
+[hub_api]: PowerView%20API.md
