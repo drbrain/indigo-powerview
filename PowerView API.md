@@ -19,7 +19,8 @@ variable field that would be filled in with a shade ID number.
 ### Hub discovery
 
 The PowerView hub responds to a NetBios Name Service name query for a
-`PBDU-Hub3.0` type NB (0x20) class IN (0x1).
+`PBDU-Hub3.0` type NB (0x20) class IN (0x1), but seemingly only when the
+transaction ID is 0x3e8.
 
 ### Shade
 
