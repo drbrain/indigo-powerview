@@ -101,7 +101,7 @@ class Plugin(indigo.PluginBase):
         return None
 
     def calibrateShade(self, action):
-        shade  = indigo.devices[action.deviceId]
+        shade = indigo.devices[action.deviceId]
 
         self.debugLog('Calibrating shade %s' % (action.deviceId))
 
@@ -110,7 +110,7 @@ class Plugin(indigo.PluginBase):
         self.powerview.calibrateShade(hubHostname, shadeId)
 
     def jogShade(self, action):
-        shade  = indigo.devices[action.deviceId]
+        shade = indigo.devices[action.deviceId]
 
         self.debugLog('Jogging shade %s' % (action.deviceId))
 
