@@ -69,8 +69,12 @@ class Plugin(indigo.PluginBase):
         data = self.powerview.shade(hubHostname, shadeId)
         data.pop('name') # don't overwrite local changes
 
+        # update the shade state for items in the device.
+        # PV2 hubs have at least one additional data item
+        # (signalStrengh) not in the device definition
         for key, value in data.iteritems():
-            shade.updateStateOnServer(key, value)
+            if key in shade.states:
+                shade.updateStateOnServer(key, value)
 
     def createShade(self, hubHostname, shadeId):
         address = '%s:%s' % (hubHostname, shadeId)
