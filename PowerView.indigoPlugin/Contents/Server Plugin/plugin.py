@@ -68,8 +68,26 @@ class Plugin(indigo.PluginBase):
             self.createShade(address, shadeId)
 
     def update(self, device):
-        if device.deviceTypeId == 'PowerViewShade':
+        if device.deviceTypeId == 'PowerViewHub':
+            self.updateHub(device)
+        elif device.deviceTypeId == 'PowerViewShade':
             self.updateShade(device)
+
+    def updateHub(self, hub):
+        self.logger.debug('Updating hub %s', hub.address)
+
+        data = self.powerview.userdata(hub.address)
+
+        for key, value in data.iteritems():
+            if key in hub.states:
+                hub.updateStateOnServer(key, value)
+
+        if data is not None:
+            hub.updateStateOnServer('active', True)
+            hub.updateStateOnServer('status', 'Active')
+        else:
+            hub.updateStateOnServer('active', False)
+            hub.updateStateOnServer('status', 'Inactive')
 
     def updateShade(self, shade):
         self.logger.debug('Updating shade %s', shade.address)

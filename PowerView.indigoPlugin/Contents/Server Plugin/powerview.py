@@ -4,8 +4,18 @@ import simplejson as json
 import urllib2
 
 class PowerView:
+
     def __init__(self):
         self.logger = logging.getLogger('Plugin.PowerView')
+
+    def userdata(self, hubHostname):
+        userdataUrl = 'http://%s/api/userdata/' % (hubHostname)
+
+        data = self.__GET(userdataUrl)
+        if data is None:
+            return None
+
+        return data.get('userData')
 
     def activateScene(self, hubHostname, sceneId):
         activateSceneUrl = \

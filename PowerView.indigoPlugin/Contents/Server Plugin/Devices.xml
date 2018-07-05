@@ -2,19 +2,51 @@
 <Devices>
   <Device type="custom" id="PowerViewHub">
     <Name>PowerView Hub</Name>
+
     <ConfigUI>
       <Field type="label" id="title">
         <Label>PowerView Hub Settings</Label>
       </Field>
+
       <Field type="textfield" id="address" defaultValue="192.0.2.1">
         <Label>Hostname/IP:</Label>
       </Field>
+
       <Field type="button" id="discover">
         <Title>Discover shades</Title>
         <CallbackMethod>discoverShades</CallbackMethod>
       </Field>
     </ConfigUI>
+
+    <States>
+      <State id="hubName">
+        <ValueType>String</ValueType>
+        <TriggerLabel>Hub Name</TriggerLabel>
+        <ControlPageLabel>Hub Name</ControlPageLabel>
+      </State>
+
+      <State id="serialNumber">
+        <ValueType>String</ValueType>
+        <TriggerLabel>Serial Number</TriggerLabel>
+        <ControlPageLabel>Serial Number</ControlPageLabel>
+      </State>
+
+      <State id="active">
+        <ValueType>Boolean</ValueType>
+        <TriggerLabel>Device is Active</TriggerLabel>
+        <ControlPageLabel>Device is Active</ControlPageLabel>
+      </State>
+
+      <State id="status">
+        <ValueType>String</ValueType>
+        <TriggerLabel>Device Status Changes</TriggerLabel>
+        <ControlPageLabel>Device Status</ControlPageLabel>
+      </State>
+    </States>
+
+    <UiDisplayStateId>status</UiDisplayStateId>
   </Device>
+
   <Device type="custom" id="PowerViewShade">
     <Name>PowerView Shade</Name>
     <ConfigUI>
