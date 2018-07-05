@@ -9,7 +9,7 @@ class PowerView:
 
     def activateScene(self, hubHostname, sceneId):
         activateSceneUrl = \
-                'http://%s/api/scenes?sceneid=%s' % (hubHostname, sceneId)
+                'http://%s/api/scenes?sceneId=%s' % (hubHostname, sceneId)
 
         self.__GET(activateSceneUrl)
 
