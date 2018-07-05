@@ -1,6 +1,14 @@
 <?xml version="1.0"?>
 <PluginConfig>
   <SupportURL>https://github.com/drbrain/indigo-powerview/</SupportURL>
+
+  <Field type="textfield" id="connectionTimeout" defaultValue="5">
+    <Label>Connection timeout (seconds):</Label>
+  </Field>
+  <Field id="connectionTimeoutHelp" type="label" fontSize="mini" alignWithControl="true">
+    <Label>Timeout for network connection attempts (1-300)</Label>
+  </Field>
+
   <Field id="logLevel" type="menu" defaultValue="20">
     <Label>Event Logging Level:</Label>
     <List>

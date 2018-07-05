@@ -3,6 +3,7 @@
 
 import logging
 import base64
+import socket
 
 from powerview import *
 
@@ -18,13 +19,16 @@ class Plugin(indigo.PluginBase):
 
         self.powerview = PowerView()
 
+    def closedPrefsConfigUi(self, prefs, canceled):
+        if canceled: return
+        self.loadPluginPrefs(prefs)
+
     def loadPluginPrefs(self, prefs):
         self.logLevel = int(prefs.get('logLevel', 20))
         self.indigo_log_handler.setLevel(self.logLevel)
 
-    def closedPrefsConfigUi(self, prefs, canceled):
-        if canceled: return
-        self.loadPluginPrefs(prefs)
+        sockTimeout = int(prefs.get('connectionTimeout', 5))
+        socket.setdefaulttimeout(sockTimeout)
 
     def activateScene(self, action):
         hub = indigo.devices[action.deviceId]
