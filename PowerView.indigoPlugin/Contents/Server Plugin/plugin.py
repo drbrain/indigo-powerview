@@ -157,7 +157,7 @@ class Plugin(indigo.PluginBase):
         top    = action.props.get('top',    '')
         bottom = action.props.get('bottom', '')
 
-        self.logger.debug('Setting position of %s top: %s, bottom: %s', action.deviceId, top, bottom)
+        self.logger.info('Moving shade - %s [%s | %s]', shade.name, top, bottom)
 
         hubHostname, shadeId = shade.address.split(':')
 
