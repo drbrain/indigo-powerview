@@ -1,8 +1,12 @@
+import logging
 import base64
 import simplejson as json
 import urllib2
 
 class PowerView:
+    def __init__(self):
+        self.logger = logging.getLogger('Plugin.PowerView')
+
     def activateScene(self, hubHostname, sceneId):
         activateSceneUrl = \
                 'http://%s/api/scenes?sceneid=%s' % (hubHostname, sceneId)
@@ -112,10 +116,12 @@ class PowerView:
         return data
 
     def __GET(self, url):
+        self.logger.debug('GET %s', url)
+
         try:
             f = urllib2.urlopen(url)
-        except urllib2.HTTPError, e:
-            self.errorLog('Error fetching %s: %s' % (url, str(e)))
+        except urllib2.URLError as err:
+            self.logger.error('Error fetching %s: %s', url, err.reason)
             return;
 
         response = json.load(f)
@@ -125,6 +131,7 @@ class PowerView:
         return response
 
     def __PUT(self, url, data):
+        self.logger.debug('PUT %s', url)
         body = json.dumps(data)
 
         request = urllib2.Request(url, data=body)
@@ -135,8 +142,8 @@ class PowerView:
 
         try:
             f = opener.open(request)
-        except urllib2.HTTPError, e:
-            self.errorLog('Error fetching %s: %s' % (url, str(e)))
+        except urllib2.URLError as err:
+            self.logger.error('Error fetching %s: %s', url, err.reason)
             return;
 
         response = json.load(f)

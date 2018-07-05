@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import logging
 import base64
-import indigo
+
 from powerview import *
 
 class Plugin(indigo.PluginBase):
@@ -11,17 +12,25 @@ class Plugin(indigo.PluginBase):
         indigo.PluginBase.__init__(self, pluginId, pluginDisplayName,
                                    pluginVersion, pluginPrefs)
 
-        self.debug = pluginPrefs.get('debug', False)
+        self.loadPluginPrefs(pluginPrefs)
 
         self.devices = {}
 
         self.powerview = PowerView()
 
+    def loadPluginPrefs(self, prefs):
+        self.logLevel = int(prefs.get('logLevel', 20))
+        self.indigo_log_handler.setLevel(self.logLevel)
+
+    def closedPrefsConfigUi(self, prefs, canceled):
+        if canceled: return
+        self.loadPluginPrefs(prefs)
+
     def activateScene(self, action):
         hub = indigo.devices[action.deviceId]
         sceneId = action.props['sceneId']
 
-        self.debugLog('activate scene %s on hub %s' % (sceneId, hub.address))
+        self.logger.debug('activate scene %s on hub %s', sceneId, hub.address)
 
         self.powerview.activateScene(hub.address, sceneId)
 
@@ -29,7 +38,7 @@ class Plugin(indigo.PluginBase):
         hub = indigo.devices[action.deviceId]
         sceneCollectionId = action.props['sceneCollectionId']
 
-        self.debugLog('activate scene collection %s on hub %s' % (sceneCollectionId, hub.address))
+        self.logger.debug('activate scene collection %s on hub %s', sceneCollectionId, hub.address)
 
         self.powerview.activateSceneCollection(hub.address, sceneCollectionId)
 
@@ -45,7 +54,7 @@ class Plugin(indigo.PluginBase):
     def discoverShades(self, valuesDict, typeId, deviceId):
         address = valuesDict['address']
 
-        self.debugLog('Discovering shades on %s' % address)
+        self.logger.debug('Discovering shades on %s', address)
 
         response = self.powerview.shades(address)
 
@@ -59,7 +68,7 @@ class Plugin(indigo.PluginBase):
             self.updateShade(device)
 
     def updateShade(self, shade):
-        self.debugLog('Updating shade %s' % shade.address)
+        self.logger.debug('Updating shade %s', shade.address)
 
         if shade.address == '':
             return
@@ -76,16 +85,13 @@ class Plugin(indigo.PluginBase):
         address = '%s:%s' % (hubHostname, shadeId)
 
         if self.findShade(address):
-            self.debugLog('Shade %s already exists' % address)
-
+            self.logger.debug('Shade %s already exists', address)
             return;
-
-        self.debugLog('Creating shade %s' % address)
 
         data = self.powerview.shade(hubHostname, shadeId)
         name = data.pop('name')
 
-        self.debugLog('Creating shade %s' % address)
+        self.logger.debug('Creating shade %s [%s]', name, address)
 
         indigo.device.create(
                 protocol = indigo.kProtocol.Plugin,
@@ -103,7 +109,7 @@ class Plugin(indigo.PluginBase):
     def calibrateShade(self, action):
         shade = indigo.devices[action.deviceId]
 
-        self.debugLog('Calibrating shade %s' % (action.deviceId))
+        self.logger.info('Calibrating shade %s', action.deviceId)
 
         hubHostname, shadeId = shade.address.split(':')
 
@@ -112,7 +118,7 @@ class Plugin(indigo.PluginBase):
     def jogShade(self, action):
         shade = indigo.devices[action.deviceId]
 
-        self.debugLog('Jogging shade %s' % (action.deviceId))
+        self.logger.info('Jogging shade %s', action.deviceId)
 
         hubHostname, shadeId = shade.address.split(':')
 
@@ -151,7 +157,7 @@ class Plugin(indigo.PluginBase):
         top    = action.props.get('top',    '')
         bottom = action.props.get('bottom', '')
 
-        self.debugLog('Setting position of %s top: %s, bottom: %s' % (action.deviceId, top, bottom))
+        self.logger.debug('Setting position of %s top: %s, bottom: %s', action.deviceId, top, bottom)
 
         hubHostname, shadeId = shade.address.split(':')
 

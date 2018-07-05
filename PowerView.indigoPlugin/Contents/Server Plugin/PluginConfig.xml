@@ -1,7 +1,14 @@
 <?xml version="1.0"?>
 <PluginConfig>
   <SupportURL>https://github.com/drbrain/indigo-powerview/</SupportURL>
-  <Field type="checkbox" id="debug">
-    <Label>Enable debug logs:</Label>
+  <Field id="logLevel" type="menu" defaultValue="20">
+    <Label>Event Logging Level:</Label>
+    <List>
+      <Option value="10">Debugging Messages</Option>
+      <Option value="20">Informational Messages</Option>
+      <Option value="30">Warning Messages</Option>
+      <Option value="40">Error Messages</Option>
+      <Option value="50">Critical Errors Only</Option>
+    </List>
   </Field>
 </PluginConfig>
