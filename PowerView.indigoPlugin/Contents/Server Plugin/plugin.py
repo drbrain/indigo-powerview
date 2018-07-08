@@ -8,6 +8,10 @@ import socket
 from powerview import *
 
 class Plugin(indigo.PluginBase):
+
+    # delay between loop steps (in seconds)
+    threadLoopDelay = 60
+
     def __init__(self, pluginId, pluginDisplayName, pluginVersion,
                  pluginPrefs):
         indigo.PluginBase.__init__(self, pluginId, pluginDisplayName,
@@ -106,6 +110,30 @@ class Plugin(indigo.PluginBase):
         for key, value in data.iteritems():
             if key in shade.states:
                 shade.updateStateOnServer(key, value)
+
+    def runConcurrentThread(self):
+        self.logger.debug(u'Thread Started')
+
+        try:
+            while not self.stopThread:
+                # devices are updated when the plugin first loads,
+                # so start with a sleep then update all devices
+                self.sleep(self.threadLoopDelay)
+                self.refreshAllDevices()
+
+        except self.StopThread:
+            pass
+
+        self.logger.debug(u'Thread Stopped')
+
+    def refreshAllDevices(self):
+        self.logger.debug(u'refreshing all devices')
+
+        # update all enabled and configured devices
+        for deviceId in self.devices:
+            device = self.devices[deviceId]
+            if (device.enabled and device.configured):
+                self.update(device)
 
     def createShade(self, hubHostname, shadeId):
         address = '%s:%s' % (hubHostname, shadeId)
