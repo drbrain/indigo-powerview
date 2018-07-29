@@ -75,15 +75,14 @@ class Plugin(indigo.PluginBase):
         self.logger.debug('Updating hub %s', hub.address)
 
         data = self.powerview.userdata(hub.address)
-        if data is None: return
-
-        for key, value in data.iteritems():
-            if key in hub.states:
-                hub.updateStateOnServer(key, value)
 
         if data is not None:
             hub.updateStateOnServer('active', True)
             hub.updateStateOnServer('status', 'Active')
+
+            for key, value in data.iteritems():
+                if key in hub.states:
+                    hub.updateStateOnServer(key, value)
         else:
             hub.updateStateOnServer('active', False)
             hub.updateStateOnServer('status', 'Inactive')
