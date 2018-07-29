@@ -3,6 +3,9 @@ import base64
 import simplejson as json
 import urllib2
 
+# TODO create a util method for getting a URL and return named element or None
+# TODO implement a "sanitize" method for handling return data (e.g. B64 decoding)
+
 class PowerView:
 
     def __init__(self):
@@ -53,9 +56,12 @@ class PowerView:
     def room(self, hubHostname, roomId):
         roomUrl = 'http://%s/api/rooms/%s' % (hubHostname, roomId)
 
-        data = self.__GET(roomUrl)['room']
+        data = self.__GET(roomUrl)
+        if data is None: return
+        data = data.pop('room')
 
-        data['name'] = base64.b64decode(data.pop('name'))
+        encName = data.pop('name')
+        data['name'] = base64.b64decode(encName)
 
         return data
 
@@ -78,10 +84,13 @@ class PowerView:
     def scenes(self, hubHostname):
         scenesURL = 'http://%s/api/scenes/' % (hubHostname)
 
-        data = self.__GET(scenesURL)['sceneData']
+        data = self.__GET(scenesURL)
+        if data is None: return
+        data = data.pop('sceneData')
 
         for scene in data:
-            name = base64.b64decode(scene.pop('name'))
+            encName = scene.pop('name')
+            name = base64.b64decode(encName)
 
             room = self.room(hubHostname, scene['roomId'])
 
@@ -93,11 +102,13 @@ class PowerView:
         sceneCollectionsUrl = \
                 'http://%s/api/scenecollections/' % (hubHostname)
 
-        data = self.__GET(sceneCollectionsUrl)['sceneCollectionData']
+        data = self.__GET(sceneCollectionsUrl)
+        if data is None: return
+        data = data.pop('sceneCollectionData')
 
         for sceneCollection in data:
-            sceneCollection['name'] = \
-                    base64.b64decode(sceneCollection.pop('name'))
+            encName = sceneCollection.pop('name')
+            sceneCollection['name'] = base64.b64decode(encName)
 
         return data
 
@@ -106,10 +117,10 @@ class PowerView:
 
         data = self.__GET(shadeUrl)
         if data is None: return
-
         data = data.pop('shade')
 
-        data['name']         = base64.b64decode(data.pop('name'))
+        encName              = data.pop('name')
+        data['name']         = base64.b64decode(encName)
         data['batteryLevel'] = data.pop('batteryStrength')
 
         if 'positions' in data:
@@ -121,10 +132,13 @@ class PowerView:
     def shades(self, hubHostname):
         shadesUrl = 'http://%s/api/shades/' % hubHostname
 
-        data = self.__GET(shadesUrl)['shadeData']
+        data = self.__GET(shadesUrl)
+        if data is None: return
+        data = data.pop('shadeData')
 
         for shade in data:
-            shade['name'] = base64.b64decode(shade.pop('name'))
+            encName = shade.pop('name')
+            shade['name'] = base64.b64decode(encName)
 
         return data
 
