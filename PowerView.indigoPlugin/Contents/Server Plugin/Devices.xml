@@ -4,17 +4,8 @@
     <Name>PowerView Hub</Name>
 
     <ConfigUI>
-      <Field type="label" id="title">
-        <Label>PowerView Hub Settings</Label>
-      </Field>
-
-      <Field type="textfield" id="address" defaultValue="192.0.2.1">
+      <Field type="textfield" id="address" defaultValue="powerview-hub.local">
         <Label>Hostname/IP:</Label>
-      </Field>
-
-      <Field type="button" id="discover">
-        <Title>Discover shades</Title>
-        <CallbackMethod>discoverShades</CallbackMethod>
       </Field>
     </ConfigUI>
 
@@ -50,9 +41,16 @@
   <Device type="custom" id="PowerViewShade">
     <Name>PowerView Shade</Name>
     <ConfigUI>
-      <Field type="label" id="title">
-        <Label>PowerView Shade Settings</Label>
+      <Field id="hubId" type="menu">
+        <Label>Hub</Label>
+        <List class="indigo.devices" filter="self.PowerViewHub" />
       </Field>
+
+      <Field id="address" type="menu">
+        <Label>Shade</Label>
+        <List class="self" method="listWindowShades" dynamicReload="true" />
+      </Field>
+
       <Field type="textfield" id="heading">
         <Label>Window heading:</Label>
       </Field>
@@ -60,6 +58,7 @@
         <Label>In degrees from true north and perpendicular to the where the shade is mounted.  Use this for auto-closing shades on sun direction.</Label>
       </Field>
     </ConfigUI>
+
     <States>
       <State id="position1">
         <ValueType>Number</ValueType>

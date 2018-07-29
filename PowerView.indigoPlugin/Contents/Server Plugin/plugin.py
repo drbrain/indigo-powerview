@@ -27,6 +27,12 @@ class Plugin(indigo.PluginBase):
         if canceled: return
         self.loadPluginPrefs(prefs)
 
+    def closedDeviceConfigUi(self, values, canceled, typeId, devId):
+        if canceled: return
+
+        dev = indigo.devices[devId]
+        self.update(dev)
+
     def loadPluginPrefs(self, prefs):
         self.logLevel = int(prefs.get('logLevel', 20))
         self.indigo_log_handler.setLevel(self.logLevel)
@@ -59,18 +65,6 @@ class Plugin(indigo.PluginBase):
         if device.id in self.devices:
             self.devices.pop(device.id)
 
-    def discoverShades(self, valuesDict, typeId, deviceId):
-        address = valuesDict['address']
-
-        self.logger.debug('Discovering shades on %s', address)
-
-        response = self.powerview.shades(address)
-
-        shadeIds = response['shadeIds']
-
-        for shadeId in shadeIds:
-            self.createShade(address, shadeId)
-
     def update(self, device):
         if device.deviceTypeId == 'PowerViewHub':
             self.updateHub(device)
@@ -81,6 +75,7 @@ class Plugin(indigo.PluginBase):
         self.logger.debug('Updating hub %s', hub.address)
 
         data = self.powerview.userdata(hub.address)
+        if data is None: return
 
         for key, value in data.iteritems():
             if key in hub.states:
@@ -94,14 +89,14 @@ class Plugin(indigo.PluginBase):
             hub.updateStateOnServer('status', 'Inactive')
 
     def updateShade(self, shade):
-        self.logger.debug('Updating shade %s', shade.address)
+        hubId = int(shade.pluginProps['hubId'])
+        hub = indigo.devices[hubId]
 
-        if shade.address == '':
-            return
+        self.logger.debug('Updating shade %s:%s', hub.address, shade.address)
 
-        hubHostname, shadeId = shade.address.split(':')
+        data = self.powerview.shade(hub.address, shade.address)
+        if data is None: return
 
-        data = self.powerview.shade(hubHostname, shadeId)
         data.pop('name') # don't overwrite local changes
 
         # update the shade state for items in the device.
@@ -135,51 +130,28 @@ class Plugin(indigo.PluginBase):
             if (device.enabled and device.configured):
                 self.update(device)
 
-    def createShade(self, hubHostname, shadeId):
-        address = '%s:%s' % (hubHostname, shadeId)
-
-        if self.findShade(address):
-            self.logger.debug('Shade %s already exists', address)
-            return;
-
-        data = self.powerview.shade(hubHostname, shadeId)
-        name = data.pop('name')
-
-        self.logger.debug('Creating shade %s [%s]', name, address)
-
-        indigo.device.create(
-                protocol = indigo.kProtocol.Plugin,
-                address = address,
-                deviceTypeId = 'PowerViewShade',
-                name = name)
-
-    def findShade(self, address):
-        for device in indigo.devices.itervalues():
-            if device.deviceTypeId == 'PowerViewShade' and device.address == address:
-               return device
-
-        return None
-
     def calibrateShade(self, action):
         shade = indigo.devices[action.deviceId]
 
         self.logger.info('Calibrating shade %s', action.deviceId)
 
-        hubHostname, shadeId = shade.address.split(':')
+        hubId = shade.pluginProps['hubId']
+        hub = indigo.devices[int(hubId)]
 
-        self.powerview.calibrateShade(hubHostname, shadeId)
+        self.powerview.calibrateShade(hub.address, shade.address)
 
     def jogShade(self, action):
         shade = indigo.devices[action.deviceId]
 
         self.logger.info('Jogging shade %s', action.deviceId)
 
-        hubHostname, shadeId = shade.address.split(':')
+        hubId = shade.pluginProps['hubId']
+        hub = indigo.devices[int(hubId)]
 
-        self.powerview.jogShade(hubHostname, shadeId)
+        self.powerview.jogShade(hub.address, shade.address)
 
     def listSceneCollections(self, filter="", valuesDict="", type="", targetId=0):
-        hub = self.devices[targetId]
+        hub = indigo.devices[targetId]
 
         data = self.powerview.sceneCollections(hub.address)
 
@@ -192,8 +164,26 @@ class Plugin(indigo.PluginBase):
 
         return list
 
+    def listWindowShades(self, filter="", valuesDict="", type="", targetId=0):
+        list = []
+
+        hubId = valuesDict.get('hubId')
+        if hubId is None: return list
+
+        hub = indigo.devices[int(hubId)]
+
+        self.logger.debug("Querying shades from %s", hub.name)
+        data = self.powerview.shades(hub.address)
+
+        for shade in data:
+            list.append([shade['id'], shade['name']])
+
+        list = sorted(list, key=lambda pair: pair[1])
+
+        return list
+
     def listScenes(self, filter="", valuesDict="", type="", targetId=0):
-        hub = self.devices[targetId]
+        hub = indigo.devices[targetId]
 
         scenes = self.powerview.scenes(hub.address)
 
@@ -213,6 +203,7 @@ class Plugin(indigo.PluginBase):
 
         self.logger.info('Moving shade - %s [%s | %s]', shade.name, top, bottom)
 
-        hubHostname, shadeId = shade.address.split(':')
+        hubId = shade.pluginProps['hubId']
+        hub = indigo.devices[int(hubId)]
 
-        self.powerview.setShadePosition(hubHostname, shadeId, top, bottom)
+        self.powerview.setShadePosition(hub.address, shade.address, top, bottom)

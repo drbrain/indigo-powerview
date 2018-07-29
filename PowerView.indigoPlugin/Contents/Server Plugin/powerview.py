@@ -12,8 +12,7 @@ class PowerView:
         userdataUrl = 'http://%s/api/userdata/' % (hubHostname)
 
         data = self.__GET(userdataUrl)
-        if data is None:
-            return None
+        if data is None: return None
 
         return data.get('userData')
 
@@ -105,15 +104,16 @@ class PowerView:
     def shade(self, hubHostname, shadeId):
         shadeUrl = 'http://%s/api/shades/%s' % (hubHostname, shadeId)
 
-        data = self.__GET(shadeUrl)['shade']
-        data.pop('id')
+        data = self.__GET(shadeUrl)
+        if data is None: return
+
+        data = data.pop('shade')
 
         data['name']         = base64.b64decode(data.pop('name'))
         data['batteryLevel'] = data.pop('batteryStrength')
 
         if 'positions' in data:
             shadePositions = data.pop('positions')
-
             data.update(shadePositions)
 
         return data
@@ -121,7 +121,10 @@ class PowerView:
     def shades(self, hubHostname):
         shadesUrl = 'http://%s/api/shades/' % hubHostname
 
-        data = self.__GET(shadesUrl)
+        data = self.__GET(shadesUrl)['shadeData']
+
+        for shade in data:
+            shade['name'] = base64.b64decode(shade.pop('name'))
 
         return data
 
