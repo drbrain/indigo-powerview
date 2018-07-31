@@ -44,6 +44,7 @@
       <Field id="hubId" type="menu">
         <Label>Hub</Label>
         <List class="indigo.devices" filter="self.PowerViewHub" />
+        <CallbackMethod>nullConfigCallback</CallbackMethod>
       </Field>
 
       <Field id="address" type="menu">

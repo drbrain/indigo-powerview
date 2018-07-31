@@ -88,8 +88,9 @@ class Plugin(indigo.PluginBase):
             hub.updateStateOnServer('status', 'Inactive')
 
     def updateShade(self, shade):
-        hubId = int(shade.pluginProps['hubId'])
-        hub = indigo.devices[hubId]
+        hubId = shade.pluginProps.get('hubId')
+        if hubId is None: return
+        hub = indigo.devices[int(hubId)]
 
         self.logger.debug('Updating shade %s:%s', hub.address, shade.address)
 
@@ -148,6 +149,11 @@ class Plugin(indigo.PluginBase):
         hub = indigo.devices[int(hubId)]
 
         self.powerview.jogShade(hub.address, shade.address)
+
+    def nullConfigCallback(self, filter="", valuesDict="", type="", targetId=0):
+        # this method triggers a callback from a config UI, which allows any dynamic
+        # lists to repopulate - used mostly for selecting a hub / shade combo
+        pass
 
     def listSceneCollections(self, filter="", valuesDict="", type="", targetId=0):
         hub = indigo.devices[targetId]
