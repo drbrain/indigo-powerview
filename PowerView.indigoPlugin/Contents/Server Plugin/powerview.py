@@ -2,6 +2,7 @@ import logging
 import base64
 import simplejson as json
 import urllib2
+import threading
 
 # TODO create a util method for getting a URL and return named element or None
 # TODO implement a "sanitize" method for handling return data (e.g. B64 decoding)
@@ -10,6 +11,7 @@ class PowerView:
 
     def __init__(self):
         self.logger = logging.getLogger('Plugin.PowerView')
+        self.hub_lock = threading.Lock()
 
     def userdata(self, hubHostname):
         userdataUrl = 'http://%s/api/userdata/' % (hubHostname)
@@ -145,15 +147,15 @@ class PowerView:
     def __GET(self, url):
         self.logger.debug('GET %s', url)
 
-        try:
-            f = urllib2.urlopen(url)
-        except urllib2.URLError as err:
-            self.logger.error('Error fetching %s: %s', url, err.reason)
-            return;
+        response = None
 
-        response = json.load(f)
-
-        f.close()
+        with self.hub_lock:
+            try:
+                f = urllib2.urlopen(url)
+                response = json.load(f)
+                f.close()
+            except urllib2.URLError as err:
+                self.logger.error('Error connecting to %s: %s', url, err.reason)
 
         return response
 
@@ -165,17 +167,17 @@ class PowerView:
         request.add_header('Content-Type', 'application/json')
         request.get_method = lambda: "PUT"
 
+        response = None
+
         opener = urllib2.build_opener(urllib2.HTTPHandler)
 
-        try:
-            f = opener.open(request)
-        except urllib2.URLError as err:
-            self.logger.error('Error fetching %s: %s', url, err.reason)
-            return;
-
-        response = json.load(f)
-
-        f.close()
+        with self.hub_lock:
+            try:
+                f = opener.open(request)
+                response = json.load(f)
+                f.close()
+            except urllib2.URLError as err:
+                self.logger.error('Error connecting to %s: %s', url, err.reason)
 
         return response
 
