@@ -33,6 +33,19 @@ class Plugin(indigo.PluginBase):
         dev = indigo.devices[devId]
         self.update(dev)
 
+    def validateActionConfigUi(self, values, typeId, devId):
+        errors = indigo.Dict()
+
+        # TODO verify that values are the correct type and range
+
+        if (typeId == 'setShadePosition'):
+            shade = indigo.devices[devId]
+            topPos = int(values.get('top', 0))
+            bottomPos = int(values.get('bottom', 0))
+            values['description'] = 'move %s to %d/%d' % (shade.name, topPos, bottomPos)
+
+        return ((len(errors) == 0), values, errors)
+
     def loadPluginPrefs(self, prefs):
         self.logLevel = int(prefs.get('logLevel', 20))
         self.indigo_log_handler.setLevel(self.logLevel)
