@@ -62,16 +62,16 @@ Returns all shade data.  The response contains two top-level keys.  `shadeData`
 contains an array of shade objects while the `shadeIds` contains an array of
 shade IDs.
 
-`GET http://powerview/api/shade/SHADE_ID`
+`GET http://powerview/api/shades/SHADE_ID`
 
 Returns the shade object for a single shade in the `shade` key and all other
 shades in the `shadeData` key.
 
-`GET http://powerview/api/shade/SHADE_ID?updateBatteryLevel=true`
+`GET http://powerview/api/shades/SHADE_ID?updateBatteryLevel=true`
 
 Updates the battery level of the shade.  This will jog the shade.
 
-`PUT http://powerview/api/shade/SHADE_ID`
+`PUT http://powerview/api/shades/SHADE_ID`
 
 With a shade object with a `positions` object, sets the shade position.
 
