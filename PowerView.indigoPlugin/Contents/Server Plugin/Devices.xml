@@ -58,6 +58,8 @@
       <Field type="label" id="headingTitle">
         <Label>In degrees from true north and perpendicular to the where the shade is mounted.  Use this for auto-closing shades on sun direction.</Label>
       </Field>
+
+      <Field id="SupportsBatteryLevel" type="checkbox" defaultValue="true" hidden="true" />
     </ConfigUI>
 
     <States>
@@ -104,11 +106,6 @@
         <ValueType>Number</ValueType>
         <TriggerLabel>Order</TriggerLabel>
         <ControlPageLabel>Order</ControlPageLabel>
-      </State>
-      <State id="batteryLevel" readonly="true">
-        <ValueType>Number</ValueType>
-        <TriggerLabel>Battery Level</TriggerLabel>
-        <ControlPageLabel>Battery Level</ControlPageLabel>
       </State>
       <State id="batteryStatus" readonly="true">
         <ValueType>Number</ValueType>

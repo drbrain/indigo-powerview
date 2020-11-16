@@ -119,6 +119,12 @@ class Plugin(indigo.PluginBase):
             if key in shade.states:
                 shade.updateStateOnServer(key, value)
 
+        # update battery level (3.0 is "max" status level)
+        batt = data.get('batteryStatus')
+        if batt is not None:
+            batteryLevel = (int(batt) / 3.0) * 100
+            shade.updateStateOnServer('batteryLevel', batteryLevel)
+
     def runConcurrentThread(self):
         self.logger.debug(u'Thread Started')
 
