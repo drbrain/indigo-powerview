@@ -9,6 +9,7 @@
       <Field type="textfield" id="address" defaultValue="192.0.2.1">
         <Label>Hostname/IP:</Label>
       </Field>
+      <Field type="separator" id="simpleSeparator1" />
       <Field type="button" id="discover">
         <Title>Discover shades</Title>
         <CallbackMethod>discoverShades</CallbackMethod>
@@ -31,7 +32,7 @@
     <States>
       <State id="position1">
         <ValueType>Number</ValueType>
-        <TriggerLabel>Position 1</TriggerLabel>
+        <TriggerLabel>Position 1 (Primary)</TriggerLabel>
         <TriggerLabelPrefix>Position 1 moved to</TriggerLabelPrefix>
         <ControlPageLabel>Position 1</ControlPageLabel>
         <ControlPageLabelPrefix>Position 1 moved to</ControlPageLabelPrefix>
@@ -43,7 +44,7 @@
       </State>
       <State id="position2">
         <ValueType>Number</ValueType>
-        <TriggerLabel>Position 2</TriggerLabel>
+        <TriggerLabel>Position 2 (Secondary)</TriggerLabel>
         <TriggerLabelPrefix>Position 2 moved to</TriggerLabelPrefix>
         <ControlPageLabel>Position 2</ControlPageLabel>
         <ControlPageLabelPrefix>Position 2 moved to</ControlPageLabelPrefix>

@@ -1,20 +1,26 @@
 import base64
-import logging
-import requests
+
+try:
+    import simplejson as json
+    import urllib2
+except:
+    pass
+
 
 class PowerView:
 
-    logger = logging.getLogger()
+    def __init__(self, logger):
+        self.logger = logger
 
     def activateScene(self, hubHostname, sceneId):
         activateSceneUrl = \
-                'http://%s/api/scenes?sceneId=%s' % (hubHostname, sceneId)
+            'http://%s/api/scenes?sceneId=%s' % (hubHostname, sceneId)
 
         self.__GET(activateSceneUrl)
 
     def activateSceneCollection(self, hubHostname, sceneCollectionId):
         activateSceneCollectionUrl = \
-                'http://%s/api/scenecollections?scenecollectionid=%s' % (hubHostname, sceneCollectionId)
+            'http://%s/api/scenecollections?scenecollectionid=%s' % (hubHostname, sceneCollectionId)
 
         self.__GET(activateSceneCollectionUrl)
 
@@ -81,13 +87,13 @@ class PowerView:
 
     def sceneCollections(self, hubHostname):
         sceneCollectionsUrl = \
-                'http://%s/api/scenecollections/' % (hubHostname)
+            'http://%s/api/scenecollections/' % (hubHostname)
 
         data = self.__GET(sceneCollectionsUrl)['sceneCollectionData']
 
         for sceneCollection in data:
             sceneCollection['name'] = \
-                    base64.b64decode(sceneCollection.pop('name'))
+                base64.b64decode(sceneCollection.pop('name'))
 
         return data
 
@@ -97,7 +103,7 @@ class PowerView:
         data = self.__GET(shadeUrl)['shade']
         data.pop('id')
 
-        data['name']         = base64.b64decode(data.pop('name'))
+        data['name'] = base64.b64decode(data.pop('name'))
         data['batteryLevel'] = data.pop('batteryStrength')
 
         if 'positions' in data:
@@ -114,36 +120,36 @@ class PowerView:
 
         return data
 
-    def __GET(self, url) -> dict:
+    def __GET(self, url):
         try:
-            f = requests.get(url)
-        except requests.exceptions.RequestException as e:
+            f = urllib2.urlopen(url)
+        except urllib2.HTTPError as e:
             self.logger.error('Error fetching %s: %s' % (url, str(e)))
-            return {}
-        if f.status_code != requests.codes.ok:
-            self.logger.error('Unexpected response fetching %s: %s' % (url, str(f.status_code)))
-            return {}
+            return
 
-        response = f.json()
+        response = json.load(f)
+
+        f.close()
 
         return response
 
-    def __PUT(self, url, data=None) -> dict:
+    def __PUT(self, url, data):
+        body = json.dumps(data)
+
+        request = urllib2.Request(url, data=body)
+        request.add_header('Content-Type', 'application/json')
+        request.get_method = lambda: "PUT"
+
+        opener = urllib2.build_opener(urllib2.HTTPHandler)
 
         try:
-            if data:
-                # data = {'positions':data}
-                res = requests.put(url, json=data)
-            else:
-                res = requests.put(url)
+            f = opener.open(request)
+        except urllib2.HTTPError as e:
+            self.logger.error('Error fetching %s: %s' % (url, str(e)))
+            return
 
-        except requests.exceptions.RequestException as e:
-            self.logger.error('Error in put %s: %s' % (url, str(e)))
-            return {}
-        if res.status_code != requests.codes.ok:
-            self.logger.error('Unexpected response in put %s: %s' % (url, str(res.status_code)))
-            return {}
+        response = json.load(f)
 
-        response = res.json()
+        f.close()
 
         return response
