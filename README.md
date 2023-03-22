@@ -11,6 +11,7 @@ hub, and the Indigo software.
 First determine the hostname or IP address of your PowerView Hub.  To
 determine this:
 
+For PowerView mobile app version 2:
 * Open the PowerView mobile app
 * Tap on the house name in the top left
 * Tap on the hub name above "Scene Controllers"
@@ -18,10 +19,22 @@ determine this:
 * Tap "Network Info"
 * Tap "Static IP"
 
-You need the value from the "IP address" field even if you do not have a
-static IP configured.  If the plugin stops controlling your shades and you
-find the IP Address has changed in the PowerView mobile app you may need to
-set a static IP.  Consult your router or access point documentation as well.
+For PowerView version 3.x:
+* Open the PowerView mobile app
+* Tap on "More"
+* Tap on "Accessories"
+* Tap on "Gateways"
+* Tap on the name of your gateway
+* Tap on "Info & Options"
+
+For generation 2 hubs, you need the value from the "IP address" field even 
+if you do not have a static IP configured.  If the plugin stops controlling 
+your shades and you find the IP Address has changed in the PowerView mobile 
+app, you may need to set a static IP.  Consult your router or access point 
+documentation as well.
+
+For generation 3 gateways, you may use the IP address or the hostname of the
+gateway: powerview-g3.local
 
 Next create a new device with the PowerView type and PowerView Hub model.
 Fill in the IP address from the previous step.  The "Discover shades" button
@@ -42,7 +55,7 @@ the value the compass shows.
 ## Features
 
 Automatically shade discovery for easy first-time setup.  This also makes it
-easy to new shades, or the shade gets disconnected from the hub for some
+easy to create new shades, or if the shade gets disconnected from the hub for some
 reason.  You can run the discovery process again then transfer the PowerView
 Hub ID in Indigo from the new shade device to the old shade device so all your
 actions continue to work.
@@ -55,7 +68,7 @@ Adjust shades based on criteria beyond schedules including:
 * Window-open sensors to prevent shades from closing when a window is open,
   causing them to blow around.
 * Interior or exterior temperature to keep heat out of rooms you aren't using
-* Sun angle (from the [Cynical Weather][cynical_weather] plugin) using the
+* Sun angle (from the [Cynical Weather][cynical_weather] plugin as trigger) using the
   heading field of the shade device for automatic shading
   based on season.
 
@@ -69,29 +82,99 @@ The following Indigo actions are supported:
 ### Activate Scene
 
 Activate a scene you have created in the PowerView mobile app.  This allows
-you to reuse your existing PowerView scenes without having to recreate them in
+you to run your existing PowerView scenes without needing to recreate them in
 Indigo.
 
 ### Activate Scene Collection
 
 Activate a scene collection you have created in the PowerView mobile app.
-This allows you to reuse your existing PowerView scenes collections without
-having to recreate them in Indigo.
+This allows you to run your existing PowerView scenes collections without
+having to recreate them in Indigo. Not available with Generation 3 – Use 
+Activate Scene with a Multi-Room Scene instead.
 
 ### Calibrate Shade
 
-Rediscovers the movement limits of the shade.
+Rediscovers the movement limits of the shade. Not available nor needed with 
+Generation 3.
 
 ### Jog Shade
 
 Moves the shade a tiny bit.  This helps you identify which shade the device is
-interacting with.
+interacting with and to update the shade's position.
 
 ### Set Shade Position
 
-Set the shade position of an individual shade.  This allows you to set the top
+Sets the shade position of an individual shade.  This allows you to set the top
 and bottom positions of a shade for a top-down, bottom-up shade or the shade
-position for a single-direction shade.
+position for a single-direction shade. For Generation 3 systems, setting the 
+top, bottom, tilt, and velocity are supported. See 
+[Shade Capabilities](#shade-capabilities) below for a description of how these 
+values are used. Set each value as an integer percentage from 0 (closed) to 
+100 (fully open).
+
+The Current Position button will fill in the current position values. An easy 
+way to create an Action to set a specific position is to move the shade with 
+the remote to the desired position, then use the Current Position button to 
+fill in the values when you create the Action.
+
+## Shade Capabilities
+
+The shade capability describes the Hunter Douglas Shade's capabilities. In 
+PowerView Gen 3, there are over 20 different types of Hunter Douglas Shades 
+available. These Shade have a variety of different motion capabilities. While 
+each Shade has its own set of unique properties, all can be represented by the 
+following motion type capabilities:
+ * Type 0 - Bottom Up.
+ * * Examples: Standard roller/screen shades, Duette bottom up.
+ * * Uses the “primary” control type.
+
+ * Type 1 - Bottom Up w/ 90° Tilt. 
+ * * Examples: Silhouette, Pirouette.
+ * * Uses the “primary” and “tilt” control types.
+
+ * Type 2 - Bottom Up w/ 180° Tilt.
+ * * Example: Silhouette Halo.
+ * * Uses the “primary” and “tilt” control types.
+
+ * Type 3 - Vertical (Traversing).
+ * * Examples: Skyline, Duette Vertiglide, Design Studio Drapery.
+ * * Uses the “primary” control type.
+
+ * Type 4 - Vertical (Traversing) w/ 180° Tilt.
+ * * Example: Luminette.
+ * * Uses the “primary” and “tilt” control types.
+
+ * Type 5 - Tilt Only 180°.
+ * * Examples: Palm Beach Shutters, Parkland Wood Blinds.
+ * * Uses the “tilt” control type.
+
+ * Type 6 - Top Down.
+ * * Example: Duette Top Down.
+ * * Uses the “primary” control type.
+
+ * Type 7 - Top-Down/Bottom-Up (can open either from the bottom or from the top).
+ * * Examples: Duette TDBU, Vignette TDBU.
+ * * Uses the “primary” and “secondary” control types.
+
+ * Type 8 - Duolite (front and rear shades).
+ * * Examples: Roller Duolite, Vignette Duolite, Dual Roller.
+ * * Uses the “primary” and “secondary” control types.
+ * * Note: In some cases the front and rear shades are
+controlled by a single motor and are on a single tube, so they cannot operate independently — the
+front shade must be down before the rear shade can deploy. In other cases, they are independent with
+two motors and two tubes. Where they are dependent, the shade firmware will force the appropriate
+front shade position when the rear shade is controlled — there is no need for the control system to
+take this into account.
+
+ * Type 9 - Duolite with 90° Tilt. (front bottom up shade that also tilts plus a rear blackout (non-tilting) shade).
+ * * Example: Silhouette Duolite, Silhouette Adeux.
+ * * Uses the “primary,” “secondary,” and “tilt” control types Note: Like with Type 8, these can be
+either dependent or independent.
+
+ * Type 10 - Duolite with 180° Tilt.
+ * * Example: Silhouette Halo Duolite.
+ * * Uses the “primary,” “secondary,” and “tilt” control types
+
 
 ## Usage Notes
 
@@ -105,8 +188,12 @@ the shades.
 
 ## See also
 
-Hunter Douglas doesn't seem to have documentation for the hub API so please
-see the unofficial [PowerView Hub API][hub_api]
+Hunter Douglas doesn't seem to have documentation for the hub API so for Generation 2 hubs, 
+please see the unofficial [PowerView Hub API][hub_api]. 
+
+For Generation 3 hubs, the API can be generated by your hub:
+* Enable Swagger on your hub: http://powerview-g3.local/gateway/swagger?enable=true
+* Get the Swagger results: http://powerview-g3.local:3002
 
 [hd_powerview]: https://www.hunterdouglas.com/operating-systems/powerview-motorization
 [indigo]: http://www.indigodomo.com

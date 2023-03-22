@@ -1,26 +1,19 @@
 import base64
-
-try:
-    import simplejson as json
-    import urllib2
-except:
-    pass
-
+import logging
+import requests
 
 class PowerView:
 
-    def __init__(self, logger):
-        self.logger = logger
+    logger = logging.getLogger()
 
     def activateScene(self, hubHostname, sceneId):
-        activateSceneUrl = \
-            'http://%s/api/scenes?sceneId=%s' % (hubHostname, sceneId)
+        activateSceneUrl = 'http://%s/api/scenes?sceneId=%s' % (hubHostname, sceneId)
 
         self.__GET(activateSceneUrl)
 
     def activateSceneCollection(self, hubHostname, sceneCollectionId):
         activateSceneCollectionUrl = \
-            'http://%s/api/scenecollections?scenecollectionid=%s' % (hubHostname, sceneCollectionId)
+                'http://%s/api/scenecollections?scenecollectionid=%s' % (hubHostname, sceneCollectionId)
 
         self.__GET(activateSceneCollectionUrl)
 
@@ -45,6 +38,10 @@ class PowerView:
         }
 
         self.__PUT(shadeUrl, body)
+
+    def stopShade(self, hubHostname, shadeId):
+        self.logger.error('Stop Shade function is not available on Generation 2 gateway.')
+        pass
 
     def room(self, hubHostname, roomId):
         roomUrl = 'http://%s/api/rooms/%s' % (hubHostname, roomId)
@@ -87,13 +84,13 @@ class PowerView:
 
     def sceneCollections(self, hubHostname):
         sceneCollectionsUrl = \
-            'http://%s/api/scenecollections/' % (hubHostname)
+                'http://%s/api/scenecollections/' % (hubHostname)
 
         data = self.__GET(sceneCollectionsUrl)['sceneCollectionData']
 
         for sceneCollection in data:
             sceneCollection['name'] = \
-                base64.b64decode(sceneCollection.pop('name'))
+                    base64.b64decode(sceneCollection.pop('name'))
 
         return data
 
@@ -103,7 +100,7 @@ class PowerView:
         data = self.__GET(shadeUrl)['shade']
         data.pop('id')
 
-        data['name'] = base64.b64decode(data.pop('name'))
+        data['name']         = base64.b64decode(data.pop('name'))
         data['batteryLevel'] = data.pop('batteryStrength')
 
         if 'positions' in data:
@@ -113,43 +110,43 @@ class PowerView:
 
         return data
 
-    def shades(self, hubHostname):
+    def shadeIds(self, hubHostname):
         shadesUrl = 'http://%s/api/shades/' % hubHostname
 
         data = self.__GET(shadesUrl)
 
-        return data
+        return data['shadeIds']
 
-    def __GET(self, url):
+    def __GET(self, url) -> dict:
         try:
-            f = urllib2.urlopen(url)
-        except urllib2.HTTPError as e:
+            f = requests.get(url)
+        except requests.exceptions.RequestException as e:
             self.logger.error('Error fetching %s: %s' % (url, str(e)))
-            return
+            return {}
+        if f.status_code != requests.codes.ok:
+            self.logger.error('Unexpected response fetching %s: %s' % (url, str(f.status_code)))
+            return {}
 
-        response = json.load(f)
-
-        f.close()
+        response = f.json()
 
         return response
 
-    def __PUT(self, url, data):
-        body = json.dumps(data)
-
-        request = urllib2.Request(url, data=body)
-        request.add_header('Content-Type', 'application/json')
-        request.get_method = lambda: "PUT"
-
-        opener = urllib2.build_opener(urllib2.HTTPHandler)
+    def __PUT(self, url, data=None) -> dict:
 
         try:
-            f = opener.open(request)
-        except urllib2.HTTPError as e:
-            self.logger.error('Error fetching %s: %s' % (url, str(e)))
-            return
+            if data:
+                # data = {'positions':data}
+                res = requests.put(url, json=data)
+            else:
+                res = requests.put(url)
 
-        response = json.load(f)
+        except requests.exceptions.RequestException as e:
+            self.logger.error('Error in put %s: %s' % (url, str(e)))
+            return {}
+        if res.status_code != requests.codes.ok:
+            self.logger.error('Unexpected response in put %s: %s' % (url, str(res.status_code)))
+            return {}
 
-        f.close()
+        response = res.json()
 
         return response
