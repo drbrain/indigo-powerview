@@ -1,7 +1,7 @@
 
 import logging
 import os
-from powerview3 import PowerViewGen3
+from powerview import PowerView
 import requests
 import pytest
 
@@ -16,33 +16,33 @@ def mock_put(*args, **kwargs):
 
 @pytest.fixture(scope='session')
 def host():
-    host = os.getenv('POWERVIEW3_GATEWAY_IP', default=None)
+    host = os.getenv('POWERVIEW_GATEWAY_IP', default=None)
     if host is None:
-        raise AttributeError('Define an Environment Variable: POWERVIEW3_GATEWAY_IP=<host IP or hostname>')
+        raise AttributeError('Define an Environment Variable: POWERVIEW_GATEWAY_IP=<host IP or hostname>')
     return host
 
 
 @pytest.fixture()
-def tpv3(monkeypatch):
+def tpv(monkeypatch):
     monkeypatch.setattr(requests, "put", mock_put)
-    tpv3 = PowerViewGen3(TestLogger())
-    return tpv3
+    tpv = PowerView()
+    return tpv
 
 
-def test_1_shadeIds(tpv3, host):
+def test_1_shadeIds(tpv, host):
     # def scenes(self, hubHostname):
-    result = tpv3.shadeIds(host)
+    result = tpv.shadeIds(host)
 
     assert isinstance(result, list)
     if result:
         assert isinstance(result[0], int)
 
 
-def test_shade(tpv3, host):
+def test_shade(tpv, host):
     # def shade(self, hubHostname, shadeId):
 
-    for shadeId in tpv3.shadeIds(host):
-        result = tpv3.shade(host, shadeId)
+    for shadeId in tpv.shadeIds(host):
+        result = tpv.shade(host, shadeId)
 
         if result:
             assert isinstance(result, dict)
@@ -50,26 +50,26 @@ def test_shade(tpv3, host):
             assert isinstance(result['type'], int)
 
 
-def test_2_room(tpv3, host):
+def test_2_room(tpv, host):
     # def room(self, hubHostname, roomId):
 
-    room_list = requests.get('http://{}/home/rooms'.format(host))
-    rooms = room_list.json()
+    room_response = requests.get('http://{}/api/rooms'.format(host))
+    room_ids = (room_response.json())['roomIds']
 
-    for room in rooms:
-        result = tpv3.room(host, room['id'])
+    for room_id in room_ids:
+        room = tpv.room(host, room_id)
 
-        if result:
-            assert isinstance(result, dict)
-            assert result['name']
-            assert isinstance(result['type'], int)
+        if room:
+            assert isinstance(room, dict)
+            assert room['name']
+            assert isinstance(room['type'], int)
         else:
             pytest.fail('Room not found (id={}'.format(room['id']))
 
 
-def test_3_scenes(tpv3, host):
+def test_3_scenes(tpv, host):
     # def scenes(self, hubHostname):
-    result = tpv3.scenes(host)
+    result = tpv.scenes(host)
 
     assert isinstance(result, list)
     if result:
@@ -77,38 +77,55 @@ def test_3_scenes(tpv3, host):
         assert result[0]['name']
 
 
-def test_activate_scene(tpv3, host):
+def test_4_sceneCollections(tpv, host):
+    # def sceneCollections(self, hubHostname):
+    result = tpv.sceneCollections(host)
+
+    assert isinstance(result, list)
+    if result:
+        assert isinstance(result[0], dict)
+        assert result[0]['name']
+
+
+def test_activate_scene(tpv, host):
     global mock_put_called
     # def activateScene(self, hubHostname, sceneId):
 
-    for scene in tpv3.scenes(host):
-        tpv3.activateScene(host, scene['id'])
+    for scene in tpv.scenes(host):
+        tpv.activateScene(host, scene['id'])
         assert mock_put_called
         mock_put_called = False
 
 
-def test_jog_shade(tpv3, host):
+def test_activateSceneCollection(tpv, host):
+    global mock_put_called
+    # def activateSceneCollection(self, hubHostname, sceneCollectionId):
+
+    for scene in tpv.sceneCollections(host):
+        tpv.activateSceneCollection(host, scene['id'])
+        assert mock_put_called
+        mock_put_called = False
+
+
+def test_jog_shade(tpv, host):
     global mock_put_called
     # def jogShade(self, hubHostname, shadeId):
 
-    for shadeId in tpv3.shadeIds(host):
-        tpv3.jogShade(host, shadeId)
+    for shadeId in tpv.shadeIds(host):
+        tpv.jogShade(host, shadeId)
         assert mock_put_called
         mock_put_called = False
 
 
-def test_set_shade_position(tpv3, host):
+def test_set_shade_position(tpv, host):
     global mock_put_called
     # def setShadePosition(self, hubHostname, shadeId, positions):
 
-    for shadeId in tpv3.shadeIds(host):
-        tpv3.setShadePosition(host, shadeId, {'primary':0, 'secondary':0, 'tilt':0, 'velocity':0})
+    for shadeId in tpv.shadeIds(host):
+        tpv.setShadePosition(host, shadeId, {'primary':0, 'secondary':0, 'tilt':0, 'velocity':0})
         assert mock_put_called
         mock_put_called = False
 
-
-# def activateSceneCollection(self, hubHostname, sceneCollectionId):
-# def sceneCollections(self, hubHostname):
 
 # custom class to be the mocked return value that
 # will override the requests.Response object returned from requests.put
@@ -120,8 +137,3 @@ class MockResponse:
     @staticmethod
     def json():
         return {"mock_key": "static response json for put() from MockResponse class"}
-
-class TestLogger:
-
-    def error(self, log_msg):
-        logging.getLogger().error(log_msg)
