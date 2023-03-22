@@ -1,49 +1,70 @@
 <?xml version="1.0"?>
 <Actions>
-  <Action id="activateScene" deviceFilter="self.PowerViewHub">
-    <Name>Activate Scene</Name>
-    <CallbackMethod>activateScene</CallbackMethod>
-    <ConfigUI>
-      <Field id="sceneId" type="menu">
-        <Label>Scenes</Label>
-        <List class="self" method="listScenes"/>
-      </Field>
-    </ConfigUI>
-  </Action>
-  <Action id="activateSceneCollection" deviceFilter="self.PowerViewHub">
-    <Name>Activate Scene Collection</Name>
-    <CallbackMethod>activateSceneCollection</CallbackMethod>
-    <ConfigUI>
-      <Field id="sceneCollectionId" type="menu">
-        <Label>ScenesCollection</Label>
-        <List class="self" method="listSceneCollections"/>
-      </Field>
-    </ConfigUI>
-  </Action>
-  <Action id="calibrateShade" deviceFilter="self.PowerViewShade">
-    <Name>Calibrate Shade</Name>
-    <CallbackMethod>calibrateShade</CallbackMethod>
-  </Action>
-  <Action id="jogShade" deviceFilter="self.PowerViewShade">
-    <Name>Jog Shade</Name>
-    <CallbackMethod>jogShade</CallbackMethod>
-  </Action>
-  <Action id="setShadePosition" deviceFilter="self.PowerViewShade">
-    <Name>Set Shade Position</Name>
-    <CallbackMethod>setShadePosition</CallbackMethod>
-    <ConfigUI>
-      <Field id="top" type="textfield">
-        <Label>Top</Label>
-      </Field>
-      <Field type="label" id="topDescription">
-        <Label>Position of top of shade (for top-down).  0–65535</Label>
-      </Field>
-      <Field id="bottom" type="textfield">
-        <Label>Bottom</Label>
-      </Field>
-      <Field type="label" id="bottomDescription">
-        <Label>Position of bottom of shade (for bottom-up).  0–65535</Label>
-      </Field>
-    </ConfigUI>
-  </Action>
+    <Action id="activateScene" deviceFilter="self.PowerViewHub">
+        <Name>Activate Scene</Name>
+        <CallbackMethod>activateScene</CallbackMethod>
+        <ConfigUI>
+            <Field id="sceneId" type="menu">
+                <Label>Scenes</Label>
+                <List class="self" method="listScenes"/>
+            </Field>
+        </ConfigUI>
+    </Action>
+    <Action id="activateSceneCollection" deviceFilter="self.PowerViewHub">
+        <Name>Activate Scene Collection</Name>
+        <CallbackMethod>activateSceneCollection</CallbackMethod>
+        <ConfigUI>
+            <Field id="sceneCollectionId" type="menu">
+                <Label>ScenesCollection</Label>
+                <List class="self" method="listSceneCollections"/>
+            </Field>
+        </ConfigUI>
+    </Action>
+    <Action id="calibrateShade" deviceFilter="self.PowerViewShade">
+        <Name>Calibrate Shade</Name>
+        <CallbackMethod>calibrateShade</CallbackMethod>
+    </Action>
+    <Action id="jogShade" deviceFilter="self.PowerViewShade">
+        <Name>Jog Shade</Name>
+        <CallbackMethod>jogShade</CallbackMethod>
+    </Action>
+    <Action id="stopShade" deviceFilter="self.PowerViewShade">
+        <Name>Stop Shade</Name>
+        <CallbackMethod>stopShade</CallbackMethod>
+    </Action>
+    <Action id="setShadePosition" deviceFilter="self.PowerViewShade">
+        <Name>Set Shade Position</Name>
+        <CallbackMethod>setShadePosition</CallbackMethod>
+        <ConfigUI>
+            <SupportURL>http://github.com/drbrain/indigo-powerview#shade-capabilities</SupportURL>
+            <Field id="current" type="button">
+                <Label>Lookup Current Position?:</Label>
+                <Title>Current Position</Title>
+                <CallbackMethod>currentPosition</CallbackMethod>
+            </Field>
+            <Field id="lblNumbers" type="label">
+                <Label>Enter a value as a percentage the shade is open, 0-100.</Label>
+            </Field>
+            <Field id="enablePri" type="checkbox" hidden="true" defaultValue="true"/>
+            <Field id="enableSec" type="checkbox" hidden="true" defaultValue="true"/>
+            <Field id="enableTlt" type="checkbox" hidden="true" defaultValue="true"/>
+            <Field id="enableVel" type="checkbox" hidden="true" defaultValue="true"/>
+            <Field id="primary" type="textfield" enabledBindingId="enablePri" defaultValue="0"
+                   tooltip="Disabled since the chosen shade does not support this setting.">
+                <Label>Primary:</Label>
+            </Field>
+            <Field id="secondary" type="textfield" enabledBindingId="enableSec" defaultValue="0"
+                   tooltip="Disabled since the chosen shade does not support this setting.">
+                <Label>Secondary:</Label>
+            </Field>
+            <Field id="tilt" type="textfield" enabledBindingId="enableTlt" defaultValue="0"
+                   tooltip="Disabled since the chosen shade does not support this setting.">
+                <Label>Tilt:</Label>
+            </Field>
+            <Field id="velocity" type="textfield" enabledBindingId="enableVel" defaultValue="0"
+                   tooltip="Disabled since the chosen shade does not support this setting.">
+                <Label>Velocity:</Label>
+            </Field>
+        </ConfigUI>
+    </Action>
 </Actions>
