@@ -103,11 +103,6 @@ class PowerView:
         data['name']         = base64.b64decode(data.pop('name'))
         data['batteryLevel'] = data.pop('batteryStrength')
 
-        if 'positions' in data:
-            shadePositions = data.pop('positions')
-
-            data.update(shadePositions)
-
         return data
 
     def shadeIds(self, hubHostname):

@@ -174,7 +174,6 @@ class PowerViewGen3:
 
         try:
             if data:
-                # data = {'positions':data}
                 res = requests.put(url, json=data)
             else:
                 res = requests.put(url)

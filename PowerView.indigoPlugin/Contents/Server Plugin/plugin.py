@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import json
 from powerview import PowerView
 from powerview3 import PowerViewGen3
 import requests
@@ -99,6 +100,7 @@ class Plugin(indigo.PluginBase):
         hubHostname, shadeId = shade.address.split(':')
         self.debugLog('Stopping shade %s (%s) (id:%s)' % (shade.name, shade.id, shadeId))
         self.getPV(hubHostname).stopShade(hubHostname, shadeId)
+        self.updateShadeLater(shade)
 
     def setShadePosition(self, action):
         shade = indigo.devices[action.deviceId]
@@ -124,6 +126,8 @@ class Plugin(indigo.PluginBase):
 
             positions = {'primary':primary, 'secondary':secondary, 'tilt':tilt, 'velocity':velocity}
             self.getPV(hubHostname).setShadePosition(hubHostname, shadeId, positions)
+
+        self.updateShadeLater(shade)
 
 
     #########################################
@@ -152,14 +156,14 @@ class Plugin(indigo.PluginBase):
             pos = data.get('positions')
             if pos:
                 if 'primary' in pos:  # Gen 3
-                    valuesDict['primary'] = "{:.0f}".format(float(pos['primary']) * 100.0)
-                    valuesDict['secondary'] = "{:.0f}".format(float(pos['secondary']) * 100.0)
-                    valuesDict['tilt'] = "{:.0f}".format(float(pos['tilt']) * 100.0)
-                    valuesDict['velocity'] = "{:.0f}".format(float(pos['velocity']) * 100.0)
+                    valuesDict['primary'] = "{:.0f}".format(self.to_percent(pos['primary']))
+                    valuesDict['secondary'] = "{:.0f}".format(self.to_percent(pos['secondary']))
+                    valuesDict['tilt'] = "{:.0f}".format(self.to_percent(pos['tilt']))
+                    valuesDict['velocity'] = "{:.0f}".format(self.to_percent(pos['velocity']))
                     valuesDict['enableTlt'] = (capabilities in [1, 2, 4, 5, 9, 10])  # Tilt
-                elif 'top' in pos:  # Gen 2
-                    valuesDict['primary'] = "{:.0f}".format(int(pos['bottom']) / 65535 * 100.0)
-                    valuesDict['secondary'] = "{:.0f}".format(int(pos['top']) / 65535 * 100.0)
+                elif 'posKind1' in pos:  # Gen 2
+                    valuesDict['primary'] = "{:.0f}".format(self.to_percent(pos['position1'], 65535))
+                    valuesDict['secondary'] = "{:.0f}".format(self.to_percent(pos['position2'], 65535))
                     valuesDict['tilt'] = 0
                     valuesDict['velocity'] = 0
                     valuesDict['enableTlt'] = False  # Tilt
@@ -257,6 +261,29 @@ class Plugin(indigo.PluginBase):
         if device.id in self.devices:
             self.devices.pop(device.id)
 
+    def getDeviceDisplayStateId(self, dev):
+        """ Returns the property name to be shown in the State column, since the <UiDisplayStateId>
+        tag seems to be ignored (and undocumented)."""
+        return 'open'
+
+    def runConcurrentThread(self):
+        try:
+            while True:
+                for shade in indigo.devices.iter('self.PowerViewShade'):
+                    props = shade.pluginProps
+                    need_upd = props.get('need_update', 0)
+                    if need_upd > 0:
+                        # update device with new position
+                        self.updateShade(shade)
+                        need_upd -= 1
+                        props.update({'need_update':need_upd})
+                        shade.replacePluginPropsOnServer(props)
+
+                self.sleep(15)
+
+        except self.StopThread:
+            pass
+
     def validateDeviceConfigUi(self, valuesDict, typeId, devId):
         valid = True
         errors_dict = indigo.Dict()
@@ -312,12 +339,19 @@ class Plugin(indigo.PluginBase):
     def findShadeOnHub(self, hubHostname, shadeId):
         shade_data = self.getPV(hubHostname).shade(hubHostname, shadeId)
         shade_data['shadeType'] = self.SHADE_TYPE[shade_data['capabilities']]
+
+        if 'positions' in shade_data:
+            shadePositions = shade_data.pop('positions')
+            if 'posKind1' in shadePositions:
+                shadePositions.update(primary=shadePositions['position1'], secondary=shadePositions['position2'], tilt=0, velocity=0)
+            shadePositions['open'] = self.to_percent(shadePositions['primary']) + self.to_percent(shadePositions['secondary'])
+            shade_data.update(shadePositions)
         return shade_data
 
 
     def findShade(self, address):
-        for device in indigo.devices:
-            if device.deviceTypeId == 'PowerViewShade' and device.address == address:
+        for device in indigo.devices.iter('self.PowerViewShade'):
+            if device.address == address:
                 return device
 
         return None
@@ -338,6 +372,9 @@ class Plugin(indigo.PluginBase):
 
         return self.powerview
 
+    def to_percent(self, pos, divr=1.0):
+        return float(pos) / divr * 100.0
+
     def update(self, device):
         if device.deviceTypeId == 'PowerViewShade':
             self.updateShade(device)
@@ -353,10 +390,25 @@ class Plugin(indigo.PluginBase):
         data = self.findShadeOnHub(hubHostname, shadeId)
         data.pop('name')  # don't overwrite local changes
 
+        shade_states_details = super(Plugin, self).getDeviceStateList(shade)
+        shade_states = []
+        for shade_states_detail in shade_states_details:
+            shade_states.append(shade_states_detail['Key'])
+
         # update the shade state for items in the device.
         # PV2 hubs have at least one additional data item
         # (signalStrengh) not in the device definition
+        shade.stateListOrDisplayStateIdChanged()  # Ensure any new states are added to this shade
         for key in data.keys():
-            if key in shade.states:
-                shade.updateStateOnServer(key=key, value=data[key])
+            if key in shade_states or key in shade.states:  # update if hub has state key from Devices.xml. This adds new states.
+                if key == 'open':
+                    shade.updateStateOnServer(key=key, value=data[key], uiValue="{:.0f}% Open".format(data[key]), decimalPlaces=0)
+                else:
+                    shade.updateStateOnServer(key=key, value=data[key])
+
+    def updateShadeLater(self, shade):
+        """ Save an indicator in plugin properties for this shade to signal to do an update later, after it has moved. """
+        props = shade.pluginProps
+        props.update({'need_update': 4})
+        shade.replacePluginPropsOnServer(props)
 

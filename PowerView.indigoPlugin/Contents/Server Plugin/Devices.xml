@@ -41,6 +41,11 @@
             </Field>
         </ConfigUI>
         <States>
+            <State id="open" readonly="true">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Percentage Open</TriggerLabel>
+                <ControlPageLabel>Percentage Open</ControlPageLabel>
+            </State>
             <State id="primary" readonly="true">
                 <ValueType>Number</ValueType>
                 <TriggerLabel>Primary</TriggerLabel>
