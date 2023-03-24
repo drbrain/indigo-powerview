@@ -1,8 +1,11 @@
 import base64
-import simplejson as json
-import urllib2
+import logging
+import requests
 
 class PowerView:
+
+    logger = logging.getLogger()
+
     def activateScene(self, hubHostname, sceneId):
         activateSceneUrl = \
                 'http://%s/api/scenes?sceneId=%s' % (hubHostname, sceneId)
@@ -111,37 +114,36 @@ class PowerView:
 
         return data
 
-    def __GET(self, url):
+    def __GET(self, url) -> dict:
         try:
-            f = urllib2.urlopen(url)
-        except urllib2.HTTPError, e:
-            self.errorLog('Error fetching %s: %s' % (url, str(e)))
-            return;
+            f = requests.get(url)
+        except requests.exceptions.RequestException as e:
+            self.logger.error('Error fetching %s: %s' % (url, str(e)))
+            return {}
+        if f.status_code != requests.codes.ok:
+            self.logger.error('Unexpected response fetching %s: %s' % (url, str(f.status_code)))
+            return {}
 
-        response = json.load(f)
-
-        f.close()
+        response = f.json()
 
         return response
 
-    def __PUT(self, url, data):
-        body = json.dumps(data)
-
-        request = urllib2.Request(url, data=body)
-        request.add_header('Content-Type', 'application/json')
-        request.get_method = lambda: "PUT"
-
-        opener = urllib2.build_opener(urllib2.HTTPHandler)
+    def __PUT(self, url, data=None) -> dict:
 
         try:
-            f = opener.open(request)
-        except urllib2.HTTPError, e:
-            self.errorLog('Error fetching %s: %s' % (url, str(e)))
-            return;
+            if data:
+                # data = {'positions':data}
+                res = requests.put(url, json=data)
+            else:
+                res = requests.put(url)
 
-        response = json.load(f)
+        except requests.exceptions.RequestException as e:
+            self.logger.error('Error in put %s: %s' % (url, str(e)))
+            return {}
+        if res.status_code != requests.codes.ok:
+            self.logger.error('Unexpected response in put %s: %s' % (url, str(res.status_code)))
+            return {}
 
-        f.close()
+        response = res.json()
 
         return response
-
