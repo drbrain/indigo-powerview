@@ -117,6 +117,13 @@ way to create an Action to set a specific position is to move the shade with
 the remote to the desired position, then use the Current Position button to 
 fill in the values when you create the Action.
 
+### Stop Shade
+
+Stops the shade if it is moving. To set the shade to a new position, start to 
+open or close the shade, then stop it as it reaches the desired point. You can 
+then easily create a new Action to move the shade to that position. Just use 
+the Set Shade Position Action and click the "Current Position" button.
+
 ## Shade Capabilities
 
 The shade capability describes the Hunter Douglas Shade's capabilities. In 
