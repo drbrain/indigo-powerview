@@ -366,7 +366,7 @@ class Plugin(indigo.PluginBase):
             else:
                 home = requests.get("http://{}/api/fwversion".format(hub_address))
                 if home.status_code == requests.codes.ok:
-                    self.powerview = PowerView(self.logger)
+                    self.powerview = PowerView()
                 else:
                     raise KeyError("Invalid hub address ({})".format(hub_address))
 

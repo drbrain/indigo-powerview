@@ -4,7 +4,7 @@ import requests
 
 class PowerView:
 
-    logger = logging.getLogger()
+    logger = logging.getLogger('Plugin')
 
     def activateScene(self, hubHostname, sceneId):
         activateSceneUrl = 'http://%s/api/scenes?sceneId=%s' % (hubHostname, sceneId)
