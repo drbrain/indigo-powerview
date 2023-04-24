@@ -100,9 +100,13 @@ class PowerView:
         data = self.__GET(shadeUrl)['shade']
         data.pop('id')
 
-        data['name']         = base64.b64decode(data.pop('name'))
+        data['name'] = base64.b64decode(data.pop('name'))
         data['batteryLevel'] = data.pop('batteryStrength')
-
+        data['capabilities'] = 7  # Gen3 property defaults to "Type 7 - Top-Down/Bottom-Up"
+        if 'positions' in data:
+            if 'posKind1' in data['positions']:
+                data['positions'].update(primary=(data['positions']['position1']/65535),
+                                      secondary=(data['positions']['position2']/65535), tilt=0.0, velocity=0.0)
         return data
 
     def shadeIds(self, hubHostname):
@@ -116,13 +120,16 @@ class PowerView:
         try:
             f = requests.get(url)
         except requests.exceptions.RequestException as e:
-            self.logger.error('Error fetching %s: %s' % (url, str(e)))
+            self.logger.exception('Error fetching %s: %s' % (url))
             return {}
+
+        self.logger.debug("Get returned {} from '{}'".format(f.status_code, url))
         if f.status_code != requests.codes.ok:
             self.logger.error('Unexpected response fetching %s: %s' % (url, str(f.status_code)))
             return {}
 
         response = f.json()
+        self.logger.debug("Get response body '{}'".format(response))
 
         return response
 
@@ -136,12 +143,15 @@ class PowerView:
                 res = requests.put(url)
 
         except requests.exceptions.RequestException as e:
-            self.logger.error('Error in put %s: %s' % (url, str(e)))
+            self.logger.exception("Error in put {} with data {}:".format(url, data))
             return {}
+
+        self.logger.debug("Put returned {} from '{}'".format(res.status_code, url))
         if res.status_code != requests.codes.ok:
             self.logger.error('Unexpected response in put %s: %s' % (url, str(res.status_code)))
             return {}
 
         response = res.json()
+        self.logger.debug("Put response body '{}'".format(response))
 
         return response

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import json
 from powerview import PowerView
 from powerview3 import PowerViewGen3
 import requests
@@ -53,6 +52,7 @@ class Plugin(indigo.PluginBase):
         new_shade = self.create_shade_device(address, shade_data, folderId)
         if new_shade:
             new_shade.replaceOnServer()
+            self.updateShadeLater(new_shade)
             return True
 
         return False
@@ -65,35 +65,31 @@ class Plugin(indigo.PluginBase):
         sceneId = action.props['sceneId']
 
         self.debugLog('activate scene %s on hub %s' % (sceneId, hub.name))
-
         self.getPV(hub.address).activateScene(hub.address, sceneId)
+        self.updateShadeLater(hub)
 
     def activateSceneCollection(self, action):
         hub = indigo.devices[action.deviceId]
         sceneCollectionId = action.props['sceneCollectionId']
 
         self.debugLog('activate scene collection %s on hub %s' % (sceneCollectionId, hub.name))
-
         self.getPV(hub.address).activateSceneCollection(hub.address, sceneCollectionId)
+        self.updateShadeLater(hub)
 
     def calibrateShade(self, action):
         shade = indigo.devices[action.deviceId]
-
-
         hubHostname, shadeId = shade.address.split(':')
 
         self.debugLog('Calibrating shade %s (%s) (id:%s)' % (shade.name, shade.id, shadeId))
-
         self.getPV(hubHostname).calibrateShade(hubHostname, shadeId)
 
     def jogShade(self, action):
         shade = indigo.devices[action.deviceId]
-
         hubHostname, shadeId = shade.address.split(':')
 
         self.debugLog('Jogging shade %s (%s) (id:%s)' % (shade.name, shade.id, shadeId))
-
         self.getPV(hubHostname).jogShade(hubHostname, shadeId)
+        self.updateShadeLater(shade)
 
     def stopShade(self, action):
         shade = indigo.devices[action.deviceId]
@@ -109,14 +105,14 @@ class Plugin(indigo.PluginBase):
         tilt = action.props.get('tilt', '')
         velocity = action.props.get('velocity', '')
 
-        self.debugLog('Setting position of %s (%s) primary (bottom): %s, secondary (top): %s, tilt: %s, velocity: %s' % \
+        self.debugLog('Setting position of %s (%s) primary (bottom): %s, secondary (top): %s, tilt: %s, velocity: %s' %
                     (shade.name, action.deviceId, primary, secondary, tilt, velocity))
 
         hubHostname, shadeId = shade.address.split(':')
 
         if shade.states['generation'] == 2:
-            top = int(float(primary) / 100.0 * 65535.0)
-            bottom = int(float(secondary) / 100.0 * 65535.0)
+            top = int(float(secondary) / 100.0 * 65535.0)
+            bottom = int(float(primary) / 100.0 * 65535.0)
             self.getPV(hubHostname).setShadePosition(hubHostname, shadeId, top, bottom)
         else:
             primary = float(primary) / 100.0
@@ -124,11 +120,10 @@ class Plugin(indigo.PluginBase):
             tilt = float(tilt) / 100.0
             velocity = float(velocity) / 100.0
 
-            positions = {'primary':primary, 'secondary':secondary, 'tilt':tilt, 'velocity':velocity}
+            positions = {'primary': primary, 'secondary': secondary, 'tilt': tilt, 'velocity': velocity}
             self.getPV(hubHostname).setShadePosition(hubHostname, shadeId, positions)
 
         self.updateShadeLater(shade)
-
 
     #########################################
     #  UI Support Routines
@@ -200,28 +195,24 @@ class Plugin(indigo.PluginBase):
         hub = self.devices[targetId]
 
         scenes = self.getPV(hub.address).scenes(hub.address)
-
         scene_list = []
 
         for scene in scenes:
             scene_list.append([scene['id'], scene['name']])
 
         scene_list = sorted(scene_list, key=lambda pair: pair[1])
-
         return scene_list
 
     def listSceneCollections(self, filter="", valuesDict="", type="", targetId=0):
         hub = self.devices[targetId]
 
         data = self.getPV(hub.address).sceneCollections(hub.address)
-
         scene_list = []
 
         for sceneCollection in data:
             scene_list.append([sceneCollection['id'], sceneCollection['name']])
 
         scene_list = sorted(scene_list, key=lambda pair: pair[1])
-
         return scene_list
 
     def listShades(self, filter="", valuesDict=None, typeId="", targetId=0):
@@ -233,7 +224,8 @@ class Plugin(indigo.PluginBase):
             for hub in my_devices:
                 shade_devices = indigo.devices.iter('self.PowerViewShade')
                 shade_dev_addresses = []
-                for dev in shade_devices: shade_dev_addresses.append(dev.address)
+                for dev in shade_devices:
+                    shade_dev_addresses.append(dev.address)
 
                 shade_ids = self.getPV(hub.address).shadeIds(hub.address)
                 for shade_id in shade_ids:
@@ -264,7 +256,9 @@ class Plugin(indigo.PluginBase):
     def getDeviceDisplayStateId(self, dev):
         """ Returns the property name to be shown in the State column, since the <UiDisplayStateId>
         tag seems to be ignored (and undocumented)."""
-        return 'open'
+        if dev.deviceTypeId == 'PowerViewShade':
+            return 'open'
+        return None
 
     def runConcurrentThread(self):
         try:
@@ -276,7 +270,7 @@ class Plugin(indigo.PluginBase):
                         # update device with new position
                         self.updateShade(shade)
                         need_upd -= 1
-                        props.update({'need_update':need_upd})
+                        props.update({'need_update': need_upd})
                         shade.replacePluginPropsOnServer(props)
 
                 self.sleep(15)
@@ -294,7 +288,14 @@ class Plugin(indigo.PluginBase):
                 errors_dict['heading'] = "Heading must be a compass reading from 0 to 360."
                 valid = False
 
-        if not valid: return valid, valuesDict, errors_dict
+        if not valid:
+            return valid, valuesDict, errors_dict
+
+        if typeId == 'PowerViewShade':
+            shade = indigo.devices[devId]
+            props = shade.pluginProps
+            props['stateField'] = valuesDict.get('stateField', '0')
+            shade.replacePluginPropsOnServer(props)
         return valid, valuesDict
 
     def validateActionConfigUi(self, valuesDict, typeId, deviceId):
@@ -309,7 +310,8 @@ class Plugin(indigo.PluginBase):
                     errors_dict[pos_name] = "'{}' must be a percentage 0-100, where 0 is closed and 100 is fully open.".format(pos_name)
                     valid = False
 
-        if not valid: return valid, valuesDict, errors_dict
+        if not valid:
+            return valid, valuesDict, errors_dict
         return valid, valuesDict
 
     #########################################
@@ -319,20 +321,18 @@ class Plugin(indigo.PluginBase):
         name = data['name']
         new_shade = None
 
-        while new_shade is None:
-            try:
-                new_shade = indigo.device.create(
-                    protocol=indigo.kProtocol.Plugin,
-                    address=address,
-                    deviceTypeId='PowerViewShade',
-                    name=name,
-                    description="Shade {} in {}".format(data['name'], data['room']),
-                    folder=folderId
-                )
-            except Exception as nnu:
-                if name == data['name']:
-                    self.errorLog("Another device exists with the same name as shade {} at address {}.".format(name, address))
-                name += " " + str(data['shadeId'])
+        try:
+            new_shade = indigo.device.create(
+                protocol=indigo.kProtocol.Plugin,
+                address=address,
+                deviceTypeId='PowerViewShade',
+                name=name,
+                description="Shade {} in {}".format(data['name'], data['room']),
+                props={'stateField': 0},  # default to 0 for primary position as visible state
+                folder=folderId
+            )
+        except Exception:
+            self.logger.exception("Create failed for shade {} at address {}.".format(name, address))
 
         return new_shade
 
@@ -342,12 +342,9 @@ class Plugin(indigo.PluginBase):
 
         if 'positions' in shade_data:
             shadePositions = shade_data.pop('positions')
-            if 'posKind1' in shadePositions:
-                shadePositions.update(primary=shadePositions['position1'], secondary=shadePositions['position2'], tilt=0, velocity=0)
-            shadePositions['open'] = self.to_percent(shadePositions['primary']) + self.to_percent(shadePositions['secondary'])
+            shadePositions['open'] = ''
             shade_data.update(shadePositions)
         return shade_data
-
 
     def findShade(self, address):
         for device in indigo.devices.iter('self.PowerViewShade'):
@@ -369,7 +366,6 @@ class Plugin(indigo.PluginBase):
                     self.powerview = PowerView()
                 else:
                     raise KeyError("Invalid hub address ({})".format(hub_address))
-
         return self.powerview
 
     def to_percent(self, pos, divr=1.0):
@@ -397,18 +393,45 @@ class Plugin(indigo.PluginBase):
 
         # update the shade state for items in the device.
         # PV2 hubs have at least one additional data item
-        # (signalStrengh) not in the device definition
+        # (signalStrength) not in the device definition
         shade.stateListOrDisplayStateIdChanged()  # Ensure any new states are added to this shade
         for key in data.keys():
             if key in shade_states or key in shade.states:  # update if hub has state key from Devices.xml. This adds new states.
                 if key == 'open':
-                    shade.updateStateOnServer(key=key, value=data[key], uiValue="{:.0f}% Open".format(data[key]), decimalPlaces=0)
+                    self.updateShadeOpenState(shade, data, key)
                 else:
                     shade.updateStateOnServer(key=key, value=data[key])
 
-    def updateShadeLater(self, shade):
+    def updateShadeLater(self, dev):
         """ Save an indicator in plugin properties for this shade to signal to do an update later, after it has moved. """
-        props = shade.pluginProps
-        props.update({'need_update': 4})
-        shade.replacePluginPropsOnServer(props)
+        if dev.deviceTypeId == 'PowerViewShade':
+            props = dev.pluginProps
+            props.update({'need_update': 4})
+            dev.replacePluginPropsOnServer(props)
+
+        elif dev.deviceTypeId == 'PowerViewHub':
+            for shade in indigo.devices.iter('self.PowerViewShade'):
+                if shade.address.startswith(dev.address):
+                    props = shade.pluginProps
+                    props.update({'need_update': 4})
+                    shade.replacePluginPropsOnServer(props)
+
+    def updateShadeOpenState(self, shade, data, key):
+        stateField = shade.pluginProps.get('stateField', 0)
+
+        if stateField == 0:  # 0 - Primary
+            shade.updateStateOnServer(key=key, value="{:.0f}% Open".format(self.to_percent(data['primary'])), decimalPlaces=0)
+
+        elif stateField == 1:  # 1 - Primary and Secondary
+            shade.updateStateOnServer(key=key, value="{:.0f}% P, {:.0f}% S".format(self.to_percent(data['primary']),
+                                                                                   self.to_percent(data['secondary'])), decimalPlaces=0)
+        elif stateField == 2:  # 2 - Primary and Tilt
+            shade.updateStateOnServer(key=key, value="{:.0f}% P, {:.0f}% T".format(self.to_percent(data['primary']),
+                                                                                   self.to_percent(data['tilt'])), decimalPlaces=0)
+        elif stateField == 3:  # 3 - Tilt
+            shade.updateStateOnServer(key=key, value="{:.0f}% Open".format(self.to_percent(data['tilt'])), decimalPlaces=0)
+
+        elif stateField == 4:  # 4 - Primary Secondary and Tilt
+            shade.updateStateOnServer(key=key, value="{:.0f}% P, {:.0f}% S, {:.0f}% T".format(self.to_percent(data['primary']),
+                                      self.to_percent(data['secondary']), self.to_percent(data['tilt'])), decimalPlaces=0)
 

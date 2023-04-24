@@ -28,6 +28,17 @@
                 <Label>In degrees from true north and perpendicular to the where the shade is mounted. Use this for auto-closing shades on sun direction.
                 </Label>
             </Field>
+            <Field id="stateField" type="menu">
+                <Label>Show in State column:</Label>
+                <List>
+                    <Option value="0">Primary</Option>
+                    <Option value="1">Primary and Secondary</Option>
+                    <Option value="2">Primary and Tilt</Option>
+                    <Option value="3">Tilt</Option>
+                    <Option value="4">Primary Secondary and Tilt</Option>
+                </List>
+            </Field>
+            <Field id="simpleSeparator1" type="separator"/>
             <Field type="label" id="title">
                 <Label>Create PowerView Shade: Choose hub and a new shade on that hub. </Label>
             </Field>
@@ -35,14 +46,14 @@
                 <Label>PowerView Hub:</Label>
                 <List class="self" method="listHubs"/>
             </Field>
-            <Field id="address" type="menu">
+            <Field id="shadeAddress" type="menu">
                 <Label>Room - Shade:</Label>
                 <List class="self" method="listShades" dynamicReload="true"/>
             </Field>
         </ConfigUI>
         <States>
             <State id="open" readonly="true">
-                <ValueType>Number</ValueType>
+                <ValueType>String</ValueType>
                 <TriggerLabel>Percentage Open</TriggerLabel>
                 <ControlPageLabel>Percentage Open</ControlPageLabel>
             </State>

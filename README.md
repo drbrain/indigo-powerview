@@ -182,6 +182,12 @@ either dependent or independent.
  * * Example: Silhouette Halo Duolite.
  * * Uses the “primary,” “secondary,” and “tilt” control types
 
+ **Note:** The PowerView Plugin has no support for the "tilt" control type *when running with a V2 or earlier hub*. 
+ Also with V2, the Plugin always treates the shades as if they were Type 7, so both "primary" and "secondary" are supported. 
+ Use "primary" for the bottom setting, and "secondary" for the top. Always set "secondary" to zero or blank if your 
+shade does not move at the top.
+
+
 
 ## Usage Notes
 

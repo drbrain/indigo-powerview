@@ -51,11 +51,11 @@
             <Field id="enableVel" type="checkbox" hidden="true" defaultValue="true"/>
             <Field id="primary" type="textfield" enabledBindingId="enablePri" defaultValue="0"
                    tooltip="Disabled since the chosen shade does not support this setting.">
-                <Label>Primary:</Label>
+                <Label>Primary (Bottom):</Label>
             </Field>
             <Field id="secondary" type="textfield" enabledBindingId="enableSec" defaultValue="0"
                    tooltip="Disabled since the chosen shade does not support this setting.">
-                <Label>Secondary:</Label>
+                <Label>Secondary (Top):</Label>
             </Field>
             <Field id="tilt" type="textfield" enabledBindingId="enableTlt" defaultValue="0"
                    tooltip="Disabled since the chosen shade does not support this setting.">

@@ -160,13 +160,16 @@ class PowerViewGen3:
         try:
             f = requests.get(url)
         except requests.exceptions.RequestException as e:
-            self.logger.error('Error fetching %s: %s' % (url, str(e)))
+            self.logger.exception("Error in get {}:".format(url))
             return {}
+
+        self.logger.debug("Get returned {} from '{}'".format(f.status_code, url))
         if f.status_code != requests.codes.ok:
             self.logger.error('Unexpected response fetching %s: %s' % (url, str(f.status_code)))
             return {}
 
         response = f.json()
+        self.logger.debug("Get response body '{}'".format(response))
 
         return response
 
@@ -179,12 +182,15 @@ class PowerViewGen3:
                 res = requests.put(url)
 
         except requests.exceptions.RequestException as e:
-            self.logger.error('Error in put %s: %s' % (url, str(e)))
+            self.logger.exception("Error in put {} with data {}:".format(url, data))
             return {}
+
+        self.logger.debug("Put returned {} from '{}'".format(res.status_code, url))
         if res.status_code != requests.codes.ok:
-            self.logger.error('Unexpected response in put %s: %s' % (url, str(res.status_code)))
+            self.logger.error("Unexpected response in put %s: %s".format(url, str(res.status_code)))
             return {}
 
         response = res.json()
+        self.logger.debug("Put response body '{}'".format(response))
 
         return response
