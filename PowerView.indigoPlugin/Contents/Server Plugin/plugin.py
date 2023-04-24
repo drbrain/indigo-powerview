@@ -381,26 +381,30 @@ class Plugin(indigo.PluginBase):
         if shade.address == '':
             return
 
-        hubHostname, shadeId = shade.address.split(':')
+        try:
+            hubHostname, shadeId = shade.address.split(':')
 
-        data = self.findShadeOnHub(hubHostname, shadeId)
-        data.pop('name')  # don't overwrite local changes
+            data = self.findShadeOnHub(hubHostname, shadeId)
+            data.pop('name')  # don't overwrite local changes
 
-        shade_states_details = super(Plugin, self).getDeviceStateList(shade)
-        shade_states = []
-        for shade_states_detail in shade_states_details:
-            shade_states.append(shade_states_detail['Key'])
+            shade_states_details = super(Plugin, self).getDeviceStateList(shade)
+            shade_states = []
+            for shade_states_detail in shade_states_details:
+                shade_states.append(shade_states_detail['Key'])
 
-        # update the shade state for items in the device.
-        # PV2 hubs have at least one additional data item
-        # (signalStrength) not in the device definition
-        shade.stateListOrDisplayStateIdChanged()  # Ensure any new states are added to this shade
-        for key in data.keys():
-            if key in shade_states or key in shade.states:  # update if hub has state key from Devices.xml. This adds new states.
-                if key == 'open':
-                    self.updateShadeOpenState(shade, data, key)
-                else:
-                    shade.updateStateOnServer(key=key, value=data[key])
+            # update the shade state for items in the device.
+            # PV2 hubs have at least one additional data item
+            # (signalStrength) not in the device definition
+            shade.stateListOrDisplayStateIdChanged()  # Ensure any new states are added to this shade
+            for key in data.keys():
+                if key in shade_states:  # update if hub has state key from Devices.xml. This adds new states.
+                    if key == 'open':
+                        self.updateShadeOpenState(shade, data, key)
+                    else:
+                        shade.updateStateOnServer(key=key, value=data[key])
+        except Exception as ex:
+            self.logger.exception("Exception in updateShade.")
+            raise ex
 
     def updateShadeLater(self, dev):
         """ Save an indicator in plugin properties for this shade to signal to do an update later, after it has moved. """
