@@ -4,6 +4,10 @@
 from powerview import PowerView
 from powerview3 import PowerViewGen3
 import requests
+try:
+    import indigo
+except:
+    pass
 
 
 class Plugin(indigo.PluginBase):
@@ -106,7 +110,7 @@ class Plugin(indigo.PluginBase):
         velocity = action.props.get('velocity', '')
 
         self.debugLog('Setting position of %s (%s) primary (bottom): %s, secondary (top): %s, tilt: %s, velocity: %s' %
-                    (shade.name, action.deviceId, primary, secondary, tilt, velocity))
+                      (shade.name, action.deviceId, primary, secondary, tilt, velocity))
 
         hubHostname, shadeId = shade.address.split(':')
 
@@ -147,22 +151,17 @@ class Plugin(indigo.PluginBase):
             capabilities = data.get('capabilities', -1)
             valuesDict['enablePri'] = (capabilities in [0, 1, 2, 3, 4, 6, 7, 8, 9, 10])  # Primary
             valuesDict['enableSec'] = (capabilities in [7, 8, 9, 10])  # Secondary
+            if shade.states['generation'] == 2:  # Gen 2
+                valuesDict['enableTlt'] = False  # Tilt
+                valuesDict['enableVel'] = False
 
             pos = data.get('positions')
             if pos:
-                if 'primary' in pos:  # Gen 3
-                    valuesDict['primary'] = "{:.0f}".format(self.to_percent(pos['primary']))
-                    valuesDict['secondary'] = "{:.0f}".format(self.to_percent(pos['secondary']))
-                    valuesDict['tilt'] = "{:.0f}".format(self.to_percent(pos['tilt']))
-                    valuesDict['velocity'] = "{:.0f}".format(self.to_percent(pos['velocity']))
-                    valuesDict['enableTlt'] = (capabilities in [1, 2, 4, 5, 9, 10])  # Tilt
-                elif 'posKind1' in pos:  # Gen 2
-                    valuesDict['primary'] = "{:.0f}".format(self.to_percent(pos['position1'], 65535))
-                    valuesDict['secondary'] = "{:.0f}".format(self.to_percent(pos['position2'], 65535))
-                    valuesDict['tilt'] = 0
-                    valuesDict['velocity'] = 0
-                    valuesDict['enableTlt'] = False  # Tilt
-                    valuesDict['enableVel'] = False
+                valuesDict['primary'] = "{:.0f}".format(self.to_percent(pos['primary']))
+                valuesDict['secondary'] = "{:.0f}".format(self.to_percent(pos['secondary']))
+                valuesDict['tilt'] = "{:.0f}".format(self.to_percent(pos['tilt']))
+                valuesDict['velocity'] = "{:.0f}".format(self.to_percent(pos['velocity']))
+                valuesDict['enableTlt'] = (capabilities in [1, 2, 4, 5, 9, 10])  # Tilt
 
         return valuesDict
 
@@ -438,4 +437,3 @@ class Plugin(indigo.PluginBase):
         elif stateField == 4:  # 4 - Primary Secondary and Tilt
             shade.updateStateOnServer(key=key, value="{:.0f}% P, {:.0f}% S, {:.0f}% T".format(self.to_percent(data['primary']),
                                       self.to_percent(data['secondary']), self.to_percent(data['tilt'])), decimalPlaces=0)
-

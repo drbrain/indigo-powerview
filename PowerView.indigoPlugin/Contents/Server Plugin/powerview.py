@@ -103,10 +103,16 @@ class PowerView:
         data['name'] = base64.b64decode(data.pop('name'))
         data['batteryLevel'] = data.pop('batteryStrength')
         data['capabilities'] = 7  # Gen3 property defaults to "Type 7 - Top-Down/Bottom-Up"
-        if 'positions' in data:
-            if 'posKind1' in data['positions']:
-                data['positions'].update(primary=(data['positions']['position1']/65535),
-                                      secondary=(data['positions']['position2']/65535), tilt=0.0, velocity=0.0)
+
+        # convert positions to a range of 0 to 1
+        positions = data.get('positions', [])
+        if 'position1' in positions:
+            positions['primary'] = positions['position1']/65535
+        if 'position2' in positions:
+            positions['secondary'] = positions['position2']/65535
+        positions['tilt'] = 0.0
+        positions['velocity'] = 0.0
+        data['positions'] = positions
         return data
 
     def shadeIds(self, hubHostname):
