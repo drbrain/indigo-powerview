@@ -1,10 +1,12 @@
 <?xml version="1.0"?>
 <Actions>
+    <SupportURL>https://github.com/drbrain/indigo-powerview#supported-actions</SupportURL>
     <Action id="activateScene" deviceFilter="self.PowerViewHub">
         <Name>Activate Scene</Name>
         <CallbackMethod>activateScene</CallbackMethod>
         <ConfigUI>
-            <Field id="sceneId" type="menu">
+            <SupportURL>https://github.com/drbrain/indigo-powerview#activate-scene</SupportURL>
+            <Field id="sceneId" type="menu" defaultValue="0">
                 <Label>Scenes</Label>
                 <List class="self" method="listScenes"/>
             </Field>
@@ -14,7 +16,8 @@
         <Name>Activate Scene Collection</Name>
         <CallbackMethod>activateSceneCollection</CallbackMethod>
         <ConfigUI>
-            <Field id="sceneCollectionId" type="menu">
+            <SupportURL>https://github.com/drbrain/indigo-powerview#activate-scene-collection</SupportURL>
+            <Field id="sceneCollectionId" type="menu" defaultValue="0">
                 <Label>ScenesCollection</Label>
                 <List class="self" method="listSceneCollections"/>
             </Field>
@@ -36,7 +39,7 @@
         <Name>Set Shade Position</Name>
         <CallbackMethod>setShadePosition</CallbackMethod>
         <ConfigUI>
-            <SupportURL>http://github.com/drbrain/indigo-powerview#shade-capabilities</SupportURL>
+            <SupportURL>https://github.com/drbrain/indigo-powerview#set-shade-position</SupportURL>
             <Field id="current" type="button">
                 <Label>Lookup Current Position?:</Label>
                 <Title>Current Position</Title>

@@ -33,16 +33,18 @@ your shades and you find the IP Address has changed in the PowerView mobile
 app, you may need to set a static IP.  Consult your router or access point 
 documentation as well.
 
-For generation 3 gateways, you may use the IP address or the hostname of the
+For generation 3 gateways, you may use the IP address (not recommended) or the hostname of the
 gateway: powerview-g3.local
 
 Next create a new device with the PowerView type and PowerView Hub model.
-Fill in the IP address from the previous step.  The "Discover shades" button
-will create the PowerView Shade devices for you automatically.  You can do
-this manually as well, if you want to perform the labor manually.
+Fill in the hostname or IP address from the previous step.  Use the "Discover shades" button
+to create the PowerView Shade devices automatically, or save the Hub device and then create 
+a device for each shade, if you want to perform the labor manually. Either way, to
+control a shade an Indigo device must exist for that shade. 
 
-Clicking this button multiple times will have no effect, the plugin won't
-create the same shade twice.
+The "Discover shades" button will create an Indigo device for any shade on the hub that 
+does not already exist. So clicking this button multiple times will have no negative effect, 
+the plugin won't create the same shade twice.
 
 You can now create actions to control shades using the actions described
 below.
@@ -54,7 +56,7 @@ the value the compass shows.
 
 ## Features
 
-Automatically shade discovery for easy first-time setup.  This also makes it
+Automatic shade discovery for easy first-time setup.  This also makes it
 easy to create new shades, or if the shade gets disconnected from the hub for some
 reason.  You can run the discovery process again then transfer the PowerView
 Hub ID in Indigo from the new shade device to the old shade device so all your
