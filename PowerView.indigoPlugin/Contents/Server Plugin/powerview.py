@@ -102,7 +102,7 @@ class PowerView:
 
         data['name'] = base64.b64decode(data.pop('name'))
         data['batteryLevel'] = data.pop('batteryStrength')
-        data['capabilities'] = 7  # Gen3 property defaults to "Type 7 - Top-Down/Bottom-Up"
+        data['generation'] = 2
 
         # convert positions to a range of 0 to 1
         positions = data.get('positions', [])
