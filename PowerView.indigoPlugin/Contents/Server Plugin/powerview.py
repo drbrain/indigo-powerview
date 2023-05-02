@@ -94,7 +94,7 @@ class PowerView:
 
         return data
 
-    def shade(self, hubHostname, shadeId):
+    def shade(self, hubHostname, shadeId, room=False):
         shadeUrl = 'http://%s/api/shades/%s' % (hubHostname, shadeId)
 
         data = self.__GET(shadeUrl)['shade']
@@ -103,6 +103,9 @@ class PowerView:
         data['name'] = base64.b64decode(data.pop('name'))
         data['batteryLevel'] = data.pop('batteryStrength')
         data['generation'] = 2
+        if room and 'roomId' in data:
+            room_data = self.room(hubHostname, data['roomId'])
+            data['room'] = room_data['name']
 
         # convert positions to a range of 0 to 1
         positions = data.get('positions', [])
@@ -136,13 +139,13 @@ class PowerView:
             self.logger.exception('Error fetching %s: %s' % (url))
             return {}
 
-        self.logger.debug("Get returned {} from '{}'".format(f.status_code, url))
+        self.logger.debug("    Get returned {} from '{}'".format(f.status_code, url))
         if f.status_code != requests.codes.ok:
             self.logger.error('Unexpected response fetching %s: %s' % (url, str(f.status_code)))
             return {}
 
         response = f.json()
-        self.logger.debug("Get response body '{}'".format(response))
+        self.logger.debug("    Get response body '{}'".format(response))
 
         return response
 
@@ -159,12 +162,12 @@ class PowerView:
             self.logger.exception("Error in put {} with data {}:".format(url, data))
             return {}
 
-        self.logger.debug("Put returned {} from '{}'".format(res.status_code, url))
+        self.logger.debug("    Put returned {} from '{}'".format(res.status_code, url))
         if res.status_code != requests.codes.ok:
             self.logger.error('Unexpected response in put %s: %s' % (url, str(res.status_code)))
             return {}
 
         response = res.json()
-        self.logger.debug("Put response body '{}'".format(response))
+        self.logger.debug("    Put response body '{}'".format(response))
 
         return response

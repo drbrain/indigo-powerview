@@ -128,7 +128,7 @@ class PowerViewGen3:
         self.logger.error('Scene Collections are not available on Generation 3+ gateway. Use a Multi-Room Scene instead.')
         return []
 
-    def shade(self, hubHostname, shadeId) -> dict:
+    def shade(self, hubHostname, shadeId, room=False) -> dict:
         shadeUrl = self.URL_SHADES_.format(h=hubHostname, id=shadeId)
 
         data = self.__GET(shadeUrl)
@@ -136,7 +136,7 @@ class PowerViewGen3:
 
         data['name'] = base64.b64decode(data.pop('name')).decode()
         data['generation'] = 3
-        if 'roomId' in data:
+        if room and 'roomId' in data:
             room_data = self.room(hubHostname, data['roomId'])
             data['room'] = room_data['name']
         if 'batteryStrength' in data:
@@ -163,13 +163,13 @@ class PowerViewGen3:
             self.logger.exception("Error in get {}:".format(url))
             return {}
 
-        self.logger.debug("Get returned {} from '{}'".format(f.status_code, url))
+        self.logger.debug("    Get returned {} from '{}'".format(f.status_code, url))
         if f.status_code != requests.codes.ok:
             self.logger.error('Unexpected response fetching %s: %s' % (url, str(f.status_code)))
             return {}
 
         response = f.json()
-        self.logger.debug("Get response body '{}'".format(response))
+        self.logger.debug("    Get response body '{}'".format(response))
 
         return response
 
@@ -185,12 +185,12 @@ class PowerViewGen3:
             self.logger.exception("Error in put {} with data {}:".format(url, data))
             return {}
 
-        self.logger.debug("Put returned {} from '{}'".format(res.status_code, url))
+        self.logger.debug("    Put returned {} from '{}'".format(res.status_code, url))
         if res.status_code != requests.codes.ok:
             self.logger.error("Unexpected response in put %s: %s".format(url, str(res.status_code)))
             return {}
 
         response = res.json()
-        self.logger.debug("Put response body '{}'".format(response))
+        self.logger.debug("    Put response body '{}'".format(response))
 
         return response

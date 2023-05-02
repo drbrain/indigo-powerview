@@ -335,8 +335,8 @@ class Plugin(indigo.PluginBase):
 
         return new_shade
 
-    def findShadeOnHub(self, hubHostname, shadeId):
-        shade_data = self.getPV(hubHostname).shade(hubHostname, shadeId)
+    def findShadeOnHub(self, hubHostname, shadeId, need_room=False):
+        shade_data = self.getPV(hubHostname).shade(hubHostname, shadeId, room=need_room)
         shade_data['shadeType'] = self.SHADE_TYPE[shade_data['capabilities']]
 
         if 'positions' in shade_data:
