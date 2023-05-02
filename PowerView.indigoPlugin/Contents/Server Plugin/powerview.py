@@ -107,9 +107,16 @@ class PowerView:
         # convert positions to a range of 0 to 1
         positions = data.get('positions', [])
         if 'position1' in positions:
-            positions['primary'] = positions['position1']/65535
+            if positions['posKind1'] == 1:
+                positions['primary'] = positions['position1']/65535
+            else:
+                positions['secondary'] = positions['position1'] / 65535
         if 'position2' in positions:
-            positions['secondary'] = positions['position2']/65535
+            if positions['posKind2'] == 1:
+                positions['primary'] = positions['position2'] / 65535
+            else:
+                positions['secondary'] = positions['position2'] / 65535
+
         positions['tilt'] = 0.0
         positions['velocity'] = 0.0
         data['positions'] = positions

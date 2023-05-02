@@ -104,10 +104,10 @@ class Plugin(indigo.PluginBase):
 
     def setShadePosition(self, action):
         shade = indigo.devices[action.deviceId]
-        primary = action.props.get('primary', '')
-        secondary = action.props.get('secondary', '')
-        tilt = action.props.get('tilt', '')
-        velocity = action.props.get('velocity', '')
+        primary = action.props.get('primary', '0')
+        secondary = action.props.get('secondary', '0')
+        tilt = action.props.get('tilt', '0')
+        velocity = action.props.get('velocity', '0')
 
         self.debugLog('Setting position of %s (%s) primary (bottom): %s, secondary (top): %s, tilt: %s, velocity: %s' %
                       (shade.name, action.deviceId, primary, secondary, tilt, velocity))
