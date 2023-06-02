@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
+import logging
 
-from powerview import PowerView
+from powerview2 import PowerView
 from powerview3 import PowerViewGen3
 import requests
 try:
     import indigo
-except:
+except ImportError:
     pass
 
 
@@ -29,10 +30,19 @@ class Plugin(indigo.PluginBase):
 
     def __init__(self, pluginId, pluginDisplayName, pluginVersion, pluginPrefs):
         indigo.DEBUG_SERVER_IP = "10.10.28.191"  # IP address of the Mac running PyCharm
+        # indigo.DEBUG_SERVER_IP = "localhost"  # IP address of the Mac running PyCharm
         super(Plugin, self).__init__(pluginId, pluginDisplayName, pluginVersion, pluginPrefs)
+        self.pluginPrefs = pluginPrefs
+
+        # import pydevd_pycharm
+        # pydevd_pycharm.settrace('localhost', port=5678)
+
+        self.debugSetting = pluginPrefs.get('debugPref', '')
+        self.logger = logging.getLogger('Plugin')
+        if isinstance(self.debugSetting, str):
+            self.logger.setLevel = self.debugSetting
 
         self.devices = {}
-        self.debug = pluginPrefs.get('debug', False)
         self.powerview = None
 
     #########################################
@@ -42,7 +52,7 @@ class Plugin(indigo.PluginBase):
         address = '%s:%s' % (hubHostname, shadeId)
 
         if self.findShade(address):
-            self.debugLog('Shade %s already exists' % address)
+            self.logger.info('Shade %s already exists' % address)
             return
 
         folderId = 0
@@ -50,7 +60,7 @@ class Plugin(indigo.PluginBase):
             hub = indigo.devices[hubId]
             folderId = hub.folderId
 
-        self.debugLog('Creating shade %s' % address)
+        self.logger.info('Creating shade %s' % address)
         shade_data = self.findShadeOnHub(hubHostname, shadeId)
 
         new_shade = self.create_shade_device(address, shade_data, folderId)
@@ -68,7 +78,7 @@ class Plugin(indigo.PluginBase):
         hub = indigo.devices[action.deviceId]
         sceneId = action.props['sceneId']
 
-        self.debugLog('activate scene %s on hub %s' % (sceneId, hub.name))
+        self.logger.info('activate scene %s on hub %s' % (sceneId, hub.name))
         self.getPV(hub.address).activateScene(hub.address, sceneId)
         self.updateShadeLater(hub)
 
@@ -76,7 +86,7 @@ class Plugin(indigo.PluginBase):
         hub = indigo.devices[action.deviceId]
         sceneCollectionId = action.props['sceneCollectionId']
 
-        self.debugLog('activate scene collection %s on hub %s' % (sceneCollectionId, hub.name))
+        self.logger.info('activate scene collection %s on hub %s' % (sceneCollectionId, hub.name))
         self.getPV(hub.address).activateSceneCollection(hub.address, sceneCollectionId)
         self.updateShadeLater(hub)
 
@@ -84,21 +94,21 @@ class Plugin(indigo.PluginBase):
         shade = indigo.devices[action.deviceId]
         hubHostname, shadeId = shade.address.split(':')
 
-        self.debugLog('Calibrating shade %s (%s) (id:%s)' % (shade.name, shade.id, shadeId))
+        self.logger.info('Calibrating shade %s (%s) (id:%s)' % (shade.name, shade.id, shadeId))
         self.getPV(hubHostname).calibrateShade(hubHostname, shadeId)
 
     def jogShade(self, action):
         shade = indigo.devices[action.deviceId]
         hubHostname, shadeId = shade.address.split(':')
 
-        self.debugLog('Jogging shade %s (%s) (id:%s)' % (shade.name, shade.id, shadeId))
+        self.logger.info('Jogging shade %s (%s) (id:%s)' % (shade.name, shade.id, shadeId))
         self.getPV(hubHostname).jogShade(hubHostname, shadeId)
         self.updateShadeLater(shade)
 
     def stopShade(self, action):
         shade = indigo.devices[action.deviceId]
         hubHostname, shadeId = shade.address.split(':')
-        self.debugLog('Stopping shade %s (%s) (id:%s)' % (shade.name, shade.id, shadeId))
+        self.logger.info('Stopping shade %s (%s) (id:%s)' % (shade.name, shade.id, shadeId))
         self.getPV(hubHostname).stopShade(hubHostname, shadeId)
         self.updateShadeLater(shade)
 
@@ -109,7 +119,7 @@ class Plugin(indigo.PluginBase):
         tilt = action.props.get('tilt', '0')
         velocity = action.props.get('velocity', '0')
 
-        self.debugLog('Setting position of %s (%s) primary (bottom): %s, secondary (top): %s, tilt: %s, velocity: %s' %
+        self.logger.info('Setting position of %s (%s) primary (bottom): %s, secondary (top): %s, tilt: %s, velocity: %s' %
                       (shade.name, action.deviceId, primary, secondary, tilt, velocity))
 
         hubHostname, shadeId = shade.address.split(':')
@@ -124,7 +134,7 @@ class Plugin(indigo.PluginBase):
             tilt = float(tilt) / 100.0
             velocity = float(velocity) / 100.0
 
-            positions = {'primary': primary, 'secondary': secondary, 'tilt': tilt, 'velocity': velocity}
+            positions = {"primary": primary, "secondary": secondary, "tilt": tilt, "velocity": velocity}
             self.getPV(hubHostname).setShadePosition(hubHostname, shadeId, positions)
 
         self.updateShadeLater(shade)
@@ -168,7 +178,7 @@ class Plugin(indigo.PluginBase):
     def discoverShades(self, valuesDict, typeId, deviceId):
         address = valuesDict['address']
 
-        self.debugLog('Discovering shades on %s' % address)
+        self.logger.info('Discovering shades on %s' % address)
         shadeIds = self.getPV(address).shadeIds(address)
         device_count = 0
 
@@ -267,8 +277,9 @@ class Plugin(indigo.PluginBase):
                     need_upd = props.get('need_update', 0)
                     if need_upd > 0:
                         # update device with new position
-                        self.updateShade(shade)
+                        # self.updateShade(shade)
                         need_upd -= 1
+                        # This props update will trigger call to deviceStartComm which will update the position
                         props.update({'need_update': need_upd})
                         shade.replacePluginPropsOnServer(props)
 
@@ -367,7 +378,8 @@ class Plugin(indigo.PluginBase):
                     raise KeyError("Invalid hub address ({})".format(hub_address))
         return self.powerview
 
-    def to_percent(self, pos, divr=1.0):
+    @staticmethod
+    def to_percent(pos, divr=1.0):
         return float(pos) / divr * 100.0
 
     def update(self, device):
@@ -375,7 +387,7 @@ class Plugin(indigo.PluginBase):
             self.updateShade(device)
 
     def updateShade(self, shade):
-        self.debugLog('Updating shade %s' % shade.address)
+        self.logger.info('Updating shade %s' % shade.address)
 
         if shade.address == '':
             return

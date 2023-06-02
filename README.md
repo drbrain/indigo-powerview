@@ -29,7 +29,7 @@ For PowerView version 3.x:
 
 For generation 2 hubs, you need the value from the "IP address" field even 
 if you do not have a static IP configured.  If the plugin stops controlling 
-your shades and you find the IP Address has changed in the PowerView mobile 
+your shades, and you find the IP Address has changed in the PowerView mobile 
 app, you may need to set a static IP.  Consult your router or access point 
 documentation as well.
 

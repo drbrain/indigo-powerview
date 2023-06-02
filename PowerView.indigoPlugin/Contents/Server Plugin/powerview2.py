@@ -2,9 +2,12 @@ import base64
 import logging
 import requests
 
+
 class PowerView:
 
-    logger = logging.getLogger('Plugin')
+    def __init__(self) -> None:
+        super().__init__()
+        self.logger = logging.getLogger('Plugin')
 
     def activateScene(self, hubHostname, sceneId):
         activateSceneUrl = 'http://%s/api/scenes?sceneId=%s' % (hubHostname, sceneId)
@@ -75,9 +78,7 @@ class PowerView:
 
         for scene in data:
             name = base64.b64decode(scene.pop('name'))
-
             room = self.room(hubHostname, scene['roomId'])
-
             scene['name'] = '%s - %s' % (room['name'], name)
 
         return data
@@ -89,8 +90,7 @@ class PowerView:
         data = self.__GET(sceneCollectionsUrl)['sceneCollectionData']
 
         for sceneCollection in data:
-            sceneCollection['name'] = \
-                    base64.b64decode(sceneCollection.pop('name'))
+            sceneCollection['name'] = base64.b64decode(sceneCollection.pop('name'))
 
         return data
 
@@ -119,6 +119,10 @@ class PowerView:
                 positions['primary'] = positions['position2'] / 65535
             else:
                 positions['secondary'] = positions['position2'] / 65535
+        if 'primary' not in positions:
+            positions['primary'] = 0.0
+        if 'secondary' not in positions:
+            positions['secondary'] = 0.0
 
         positions['tilt'] = 0.0
         positions['velocity'] = 0.0
@@ -134,18 +138,18 @@ class PowerView:
 
     def __GET(self, url) -> dict:
         try:
-            f = requests.get(url)
+            f = requests.get(url, headers={'accept': 'application/json'})
         except requests.exceptions.RequestException as e:
             self.logger.exception('Error fetching %s: %s' % (url))
             return {}
 
         self.logger.debug("    Get returned {} from '{}'".format(f.status_code, url))
+        self.logger.debug("    Get response body '{}'".format(f.json()))
         if f.status_code != requests.codes.ok:
             self.logger.error('Unexpected response fetching %s: %s' % (url, str(f.status_code)))
             return {}
 
         response = f.json()
-        self.logger.debug("    Get response body '{}'".format(response))
 
         return response
 
@@ -154,20 +158,20 @@ class PowerView:
         try:
             if data:
                 # data = {'positions':data}
-                res = requests.put(url, json=data)
+                res = requests.put(url, json=data, headers={'accept': 'application/json'})
             else:
-                res = requests.put(url)
+                res = requests.put(url, headers={'accept': 'application/json'})
 
         except requests.exceptions.RequestException as e:
             self.logger.exception("Error in put {} with data {}:".format(url, data))
             return {}
 
-        self.logger.debug("    Put returned {} from '{}'".format(res.status_code, url))
+        self.logger.debug("    Put to '{}' with body {}".format(url, data))
+        self.logger.debug("    Put returned {}, response body '{}'".format(res.status_code, res.json()))
         if res.status_code != requests.codes.ok:
             self.logger.error('Unexpected response in put %s: %s' % (url, str(res.status_code)))
             return {}
 
         response = res.json()
-        self.logger.debug("    Put response body '{}'".format(response))
 
         return response

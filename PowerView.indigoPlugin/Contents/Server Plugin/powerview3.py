@@ -86,7 +86,7 @@ class PowerViewGen3:
         body = {
             "motion": "jog"
         }
-        self.__PUT(shadeUrl, body)
+        self.__PUT(shadeUrl, data=body)
 
     def stopShade(self, hubHostname, shadeId):
         shadeUrl = self.URL_SHADES_STOP_.format(h=hubHostname, id=shadeId)
@@ -103,7 +103,7 @@ class PowerViewGen3:
 
     def setShadePosition(self, hubHostname, shadeId, positions):
         shadeUrl = self.URL_SHADES_POSITIONS_.format(h=hubHostname, id=shadeId)
-        pos = {'positions':positions}
+        pos = {'positions': positions}
 
         self.__PUT(shadeUrl, pos)
 
@@ -158,18 +158,18 @@ class PowerViewGen3:
 
     def __GET(self, url) -> dict:
         try:
-            f = requests.get(url)
-        except requests.exceptions.RequestException as e:
+            f = requests.get(url, headers={'accept': 'application/json'})
+        except requests.exceptions.RequestException:
             self.logger.exception("Error in get {}:".format(url))
             return {}
 
         self.logger.debug("    Get returned {} from '{}'".format(f.status_code, url))
+        self.logger.debug("    Get response body '{}'".format(f.json()))
         if f.status_code != requests.codes.ok:
-            self.logger.error('Unexpected response fetching %s: %s' % (url, str(f.status_code)))
+            self.logger.error("Unexpected response fetching {}: {}".format(url, str(f.status_code)))
             return {}
 
         response = f.json()
-        self.logger.debug("    Get response body '{}'".format(response))
 
         return response
 
@@ -177,20 +177,20 @@ class PowerViewGen3:
 
         try:
             if data:
-                res = requests.put(url, json=data)
+                res = requests.put(url, json=data, headers={'accept': 'application/json'})
             else:
-                res = requests.put(url)
+                res = requests.put(url, headers={'accept': 'application/json'})
 
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.RequestException:
             self.logger.exception("Error in put {} with data {}:".format(url, data))
             return {}
 
-        self.logger.debug("    Put returned {} from '{}'".format(res.status_code, url))
+        self.logger.debug("    Put to '{}' with body {}".format(url, data))
+        self.logger.debug("    Put returned {}, response body '{}'".format(res.status_code, res.json()))
         if res.status_code != requests.codes.ok:
-            self.logger.error("Unexpected response in put %s: %s".format(url, str(res.status_code)))
+            self.logger.error("Unexpected response in put {}: {}".format(url, str(res.status_code)))
             return {}
 
         response = res.json()
-        self.logger.debug("    Put response body '{}'".format(response))
 
         return response
