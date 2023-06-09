@@ -1,8 +1,10 @@
 
+import logging
 from powerview2 import PowerView
-import requests
 import pytest
-from pv_tests import mock_powerview as mp
+import requests
+
+logger = logging.getLogger('net.segment7.powerview')
 
 
 @pytest.fixture()

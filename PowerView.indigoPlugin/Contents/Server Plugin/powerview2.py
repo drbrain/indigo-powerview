@@ -5,6 +5,8 @@ import requests
 
 class PowerView:
 
+    GENERATION = "V2"
+
     def __init__(self) -> None:
         super().__init__()
         self.logger = logging.getLogger('Plugin')
@@ -143,8 +145,8 @@ class PowerView:
             self.logger.exception('Error fetching %s: %s' % (url))
             return {}
 
-        self.logger.debug("    Get returned {} from '{}'".format(f.status_code, url))
-        self.logger.debug("    Get response body '{}'".format(f.json()))
+        self.logger.debug("    Get from '{}'".format(url))
+        self.logger.debug("    Get returned {} response body '{}'".format(f.status_code, f.json()))
         if f.status_code != requests.codes.ok:
             self.logger.error('Unexpected response fetching %s: %s' % (url, str(f.status_code)))
             return {}

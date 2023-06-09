@@ -6,20 +6,19 @@ import requests
 host_ip = ''
 mock_get_called = False
 mock_put_called = False
+logger = logging.getLogger('net.segment7.powerview')
 
 
 # custom class to be the mocked return value that
 # will override the requests.Response object returned from requests.get and requests.put
 class MockResponse(requests.models.Response):
+
     def __init__(self):
         super().__init__()
 
         self.status_code = requests.codes.ok  # mock status code is always 200 Success
         self.data = None
         self.url = ''
-
-        self.logger = logging.getLogger('Plugin')
-        self.logger.setLevel(10)
 
     # mock json() method always returns a specific testing dictionary
     def json(self, *args, **kwds):
@@ -173,7 +172,6 @@ def host2():
     if not host_ip:
         local_ip = '127.0.0.1'  # localhost
         host_ip = os.getenv('POWERVIEW_GATEWAY_IP', default=local_ip)
-        logger = logging.getLogger('Plugin')
         if host_ip == local_ip:
             logger.error("mock_powerview: No hub defined for testing, so using built-in tests. To test with a local V2 hub, define an "
                          "Environment Variable: POWERVIEW_GATEWAY_IP=<host IP or hostname>. Testing with a local hub will read information "
@@ -188,7 +186,6 @@ def host3():
     if not host_ip:
         local_ip = '127.0.0.1'  # localhost
         host_ip = os.getenv('POWERVIEW3_GATEWAY_IP', default=local_ip)
-        logger = logging.getLogger('Plugin')
         if host_ip == local_ip:
             logger.error("mock_powerview: No hub defined for testing, so using built-in tests. To test with a local V3 gateway, define an "
                          "Environment Variable: POWERVIEW3_GATEWAY_IP=<host IP or hostname>. Testing with a local hub will read information "

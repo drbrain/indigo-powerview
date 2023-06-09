@@ -59,6 +59,9 @@ Uses the “primary,” “secondary,” and “tilt” control types
 
 
 class PowerViewGen3:
+
+    GENERATION = "V3"
+
     URL_ROOM_ = 'http://{h}/home/rooms/{id}'
     URL_SHADES_ = 'http://{h}/home/shades/{id}'
     URL_SHADES_MOTION_ = 'http://{h}/home/shades/{id}/motion'

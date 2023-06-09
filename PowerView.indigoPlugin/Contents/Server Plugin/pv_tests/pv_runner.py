@@ -1,9 +1,13 @@
 
 import logging
 import os
+from pathlib import PurePath
 import pytest
-import pytest_timestamper as timestamper
 import time
+import pytest_timestamper as timestamper
+import pytester
+import pytest_reportlog as rptlog
+logger = logging.getLogger("net.segment7.powerview")
 
 
 class ResultsCollector:
@@ -53,14 +57,15 @@ class ResultsCollector:
         self.total_duration = time.time() - terminalreporter._sessionstarttime
 
 
-def run_tests():
-    logger = logging.getLogger("net.segment7.powerview")  # net.segment7.powerview
+def run_tests(log_file_path):
     logger.error(" ")
-    logger.error("pv_runner.run_tests: wd={}".format(os.getcwd()))
+    wd = os.getcwd()
+    logger.error("pv_runner.run_tests: wd={}".format(wd))
     logger.debug('pv_runner.run_tests: Starting to run all tests in pv_tests folder.')
 
     collector = ResultsCollector()
-    ret_code = pytest.main(plugins=[collector, timestamper], args=["-v", "-r", "A"])
+    test_details_name = PurePath(os.path.dirname(log_file_path), "pyReport.log")
+    ret_code = pytest.main(plugins=[collector, timestamper, rptlog], args=["-v", "-rA", "--capture=fd", "--report-log=" + str(test_details_name)])
 
     logger.debug('pv_runner.run_tests: Finished all tests in pv_tests folder. Results follow:')
 
@@ -71,7 +76,3 @@ def run_tests():
                  .format(collector.passed, collector.failed, collector.xfailed, collector.skipped))
     logger.debug('total duration: {}'.format(collector.total_duration))
     logger.debug('pytest returned {}.'.format(ret_code))
-
-
-if __name__ == '__main__':
-    run_tests()
