@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
-import logging
 
+import logging
 from powerview2 import PowerView
 from powerview3 import PowerViewGen3
 import requests
@@ -12,7 +12,6 @@ except ImportError:
 
 
 class Plugin(indigo.PluginBase):
-
     # Shade Type lookup table. Indexed by 'capabilities' property.
     SHADE_TYPE = [
         "Bottom Up",
@@ -32,27 +31,27 @@ class Plugin(indigo.PluginBase):
         indigo.DEBUG_SERVER_IP = "10.10.28.191"  # IP address of the Mac running PyCharm
         # indigo.DEBUG_SERVER_IP = "localhost"  # IP address of the Mac running PyCharm
         super(Plugin, self).__init__(pluginId, pluginDisplayName, pluginVersion, pluginPrefs)
+
         self.pluginPrefs = pluginPrefs
-
-        # import pydevd_pycharm
-        # pydevd_pycharm.settrace('localhost', port=5678)
-
         self.debugSetting = pluginPrefs.get('debugPref', '')
-        self.logger = logging.getLogger('Plugin')
+        self.logger = logging.getLogger("Plugin")
         if isinstance(self.debugSetting, str):
             self.logger.setLevel = self.debugSetting
 
         self.devices = {}
-        self.powerview = None
+        self.hubs3 = {}
+        self.hubs2 = {}
+        self.powerview2 = None
+        self.powerview3 = None
 
     #########################################
     #  Devices
     #########################################
     def createShade(self, hubHostname, shadeId, hubId):
-        address = '%s:%s' % (hubHostname, shadeId)
+        address = "%s:%s".format((hubHostname, shadeId))
 
         if self.findShade(address):
-            self.logger.info('Shade %s already exists' % address)
+            self.logger.info("Shade {} already exists".format(address))
             return
 
         folderId = 0
@@ -60,7 +59,7 @@ class Plugin(indigo.PluginBase):
             hub = indigo.devices[hubId]
             folderId = hub.folderId
 
-        self.logger.info('Creating shade %s' % address)
+        self.logger.info("Creating shade {}".format(address))
         shade_data = self.findShadeOnHub(hubHostname, shadeId)
 
         new_shade = self.create_shade_device(address, shade_data, folderId)
@@ -120,7 +119,7 @@ class Plugin(indigo.PluginBase):
         velocity = action.props.get('velocity', '0')
 
         self.logger.info('Setting position of %s (%s) primary (bottom): %s, secondary (top): %s, tilt: %s, velocity: %s' %
-                      (shade.name, action.deviceId, primary, secondary, tilt, velocity))
+                         (shade.name, action.deviceId, primary, secondary, tilt, velocity))
 
         hubHostname, shadeId = shade.address.split(':')
 
@@ -140,7 +139,7 @@ class Plugin(indigo.PluginBase):
         self.updateShadeLater(shade)
 
     #########################################
-    #  UI Support Routines
+    #  Indigo UI Support Routines
     #########################################
     def currentPosition(self, valuesDict, typeId, devId):
         """ Returns the current values of primary, secondary, tilt and velocity for
@@ -177,6 +176,10 @@ class Plugin(indigo.PluginBase):
 
     def discoverShades(self, valuesDict, typeId, deviceId):
         address = valuesDict['address']
+        gen = self.validate_hub(address)
+        if gen not in ["V3", "V2"]:
+            valuesDict['message'] = "The Hostname/IP must be the address of a valid Hunter Douglas hub or gateway."
+            return valuesDict
 
         self.logger.info('Discovering shades on %s' % address)
         shadeIds = self.getPV(address).shadeIds(address)
@@ -187,7 +190,7 @@ class Plugin(indigo.PluginBase):
                 device_count = device_count + 1
 
         valuesDict['message'] = "Discovered {} Shade{}, and Created {} Device{}.".format(
-                len(shadeIds), 's' if len(shadeIds) != 1 else '', device_count, 's' if device_count != 1 else '')
+            len(shadeIds), 's' if len(shadeIds) != 1 else '', device_count, 's' if device_count != 1 else '')
 
         return valuesDict
 
@@ -239,8 +242,8 @@ class Plugin(indigo.PluginBase):
                 shade_ids = self.getPV(hub.address).shadeIds(hub.address)
                 for shade_id in shade_ids:
                     address = '%s:%s' % (hub.address, shade_id)
-                    if address not in shade_dev_addresses:
 
+                    if address not in shade_dev_addresses:
                         shade = self.getPV(hub.address).shade(hub.address, shade_id)
                         room_name = self.getPV(hub.address).room(hub.address, shade['roomId'])['name']
                         shade_name = shade['name']
@@ -254,6 +257,9 @@ class Plugin(indigo.PluginBase):
     #  Indigo Defined
     #########################################
     def deviceStartComm(self, device):
+        if device.deviceTypeId == "PowerViewHub":
+            self.validate_hub(device.address, device=device)
+
         if device.id not in self.devices:
             self.devices[device.id] = device
             self.update(device)
@@ -288,30 +294,10 @@ class Plugin(indigo.PluginBase):
         except self.StopThread:
             pass
 
-    def validateDeviceConfigUi(self, valuesDict, typeId, devId):
-        valid = True
-        errors_dict = indigo.Dict()
-        if typeId == 'PowerViewShade':
-            heading = valuesDict.get('heading', '0')
-            heading = int(heading) if heading.isdigit() else -1
-            if heading not in range(0, 361):
-                errors_dict['heading'] = "Heading must be a compass reading from 0 to 360."
-                valid = False
-
-        if not valid:
-            return valid, valuesDict, errors_dict
-
-        if typeId == 'PowerViewShade':
-            shade = indigo.devices[devId]
-            props = shade.pluginProps
-            props['stateField'] = valuesDict.get('stateField', '0')
-            shade.replacePluginPropsOnServer(props)
-        return valid, valuesDict
-
     def validateActionConfigUi(self, valuesDict, typeId, deviceId):
         valid = True
         errors_dict = indigo.Dict()
-        
+
         if typeId == 'setShadePosition':
             for pos_name in ['primary', 'secondary', 'tilt', 'velocity']:
                 pos_val = valuesDict.get(pos_name, '0')
@@ -323,6 +309,42 @@ class Plugin(indigo.PluginBase):
         if not valid:
             return valid, valuesDict, errors_dict
         return valid, valuesDict
+
+    def validateDeviceConfigUi(self, valuesDict, typeId, devId):
+        valid = True
+        errors_dict = indigo.Dict()
+        if typeId == 'PowerViewShade':
+            heading = valuesDict.get('heading', '0')
+            heading = int(heading) if heading.isdigit() else -1
+            if heading not in range(0, 361):
+                errors_dict['heading'] = "Heading must be a compass reading from 0 to 360."
+                valid = False
+
+            shade = indigo.devices[devId]
+            props = shade.pluginProps
+            props['stateField'] = valuesDict.get('stateField', '0')
+            shade.replacePluginPropsOnServer(props)
+
+        elif typeId == 'PowerViewHub':
+            hub_address = valuesDict.get("address", None)
+            if not hub_address:
+                errors_dict['address'] = "The Hostname/IP must be the address of a valid Hunter Douglas hub or gateway."
+                valid = False
+            gen = self.validate_hub(hub_address)
+            if gen not in ["V3", "V2"]:
+                errors_dict['address'] = "That Hostname/IP is not the address of a valid Hunter Douglas hub or gateway."
+
+        if not valid:
+            return valid, valuesDict, errors_dict
+
+        return valid, valuesDict
+
+    def validatePrefsConfigUi(self, valuesDict):
+        self.debugSetting = valuesDict.get('debugPref', '')
+        if isinstance(self.debugSetting, str):
+            self.logger.info("About to set the level to {}".format(self.debugSetting))
+            self.logger.setLevel = self.debugSetting
+        return True
 
     #########################################
     #  Utilities
@@ -366,17 +388,68 @@ class Plugin(indigo.PluginBase):
     def getPV(self, hub_address):
         """ Detects and returns the correct powerview class, based on how the gateway responds."""
 
-        if self.powerview is None:
+        if hub_address in self.hubs3:
+            if not self.powerview3:
+                self.powerview3 = PowerViewGen3()
+            return self.powerview3
+
+        elif hub_address in self.hubs2:
+            if not self.powerview2:
+                self.powerview2 = PowerView()
+            return self.powerview2
+
+        else:
+            gen = self.validate_hub(hub_address)
+            if gen == "V3":
+                if not self.powerview3:
+                    # Cannot update self.hubs3 since address may be new so device does not yet exist.
+                    self.powerview3 = PowerViewGen3()
+                return self.powerview3
+            elif gen == "V2":
+                if not self.powerview2:
+                    self.powerview2 = PowerView()
+                return self.powerview2
+            else:
+                raise ValueError("Invalid hub address ({})".format(hub_address))
+
+    def validate_hub(self, hub_address, device=None):
+        gen = ""
+
+        if hub_address in self.hubs3 or hub_address in self.hubs2:
+            if not device:
+                for aDev in indigo.devices.iter("self.PowerViewHub"):
+                    if aDev.address == hub_address:
+                        device = aDev
+            if device:
+                if device.states.get('generation', 0) == 3:
+                    gen = "V3"
+                elif device.states.get('generation', 0) == 2:
+                    gen = "V2"
+
+        else:
             home = requests.get("http://{}/home".format(hub_address))
             if home.status_code == requests.codes.ok:
-                self.powerview = PowerViewGen3(self.logger)
+                gen = "V3"
+
             else:
                 home = requests.get("http://{}/api/fwversion".format(hub_address))
                 if home.status_code == requests.codes.ok:
-                    self.powerview = PowerView()
-                else:
-                    raise KeyError("Invalid hub address ({})".format(hub_address))
-        return self.powerview
+                    gen = "V2"
+
+        if not (hub_address in self.hubs3 or hub_address in self.hubs2):
+            if not device:
+                for aDev in indigo.devices.iter("self.PowerViewHub"):
+                    if aDev.address == hub_address:
+                        device = aDev
+            if device:
+                if gen == "V3" or device.states.get('generation', 0) == 3:
+                    self.hubs3[device.address] = device
+                elif device.states.get('generation', 0) == 2:
+                    self.hubs2[device.address] = device
+
+        if not gen:
+            raise KeyError("Invalid hub address ({})".format(hub_address))
+        return gen
 
     @staticmethod
     def to_percent(pos, divr=1.0):
@@ -386,8 +459,14 @@ class Plugin(indigo.PluginBase):
         if device.deviceTypeId == 'PowerViewShade':
             self.updateShade(device)
 
+        elif device.deviceTypeId == 'PowerViewHub':
+            pv = self.getPV(device.address)
+            gen = pv.GENERATION[1]  # select the digit after the leading 'V'
+            device.stateListOrDisplayStateIdChanged()  # Ensure any new states are added to this shade
+            device.updateStateOnServer(key='generation', value=gen)
+
     def updateShade(self, shade):
-        self.logger.info('Updating shade %s' % shade.address)
+        self.logger.debug("Updating shade {}".format(shade.address))  # show this in Event Log window
 
         if shade.address == '':
             return
@@ -448,4 +527,5 @@ class Plugin(indigo.PluginBase):
 
         elif stateField == 4:  # 4 - Primary Secondary and Tilt
             shade.updateStateOnServer(key=key, value="{:.0f}% P, {:.0f}% S, {:.0f}% T".format(self.to_percent(data['primary']),
-                                      self.to_percent(data['secondary']), self.to_percent(data['tilt'])), decimalPlaces=0)
+                                                                                              self.to_percent(data['secondary']),
+                                                                                              self.to_percent(data['tilt'])), decimalPlaces=0)

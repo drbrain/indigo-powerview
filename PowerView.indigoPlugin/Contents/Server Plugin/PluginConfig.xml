@@ -1,11 +1,6 @@
 <?xml version="1.0"?>
 <PluginConfig>
-    <SupportURL>https://github.com/drbrain/indigo-powerview/</SupportURL>
-        <States>
-            <State id="debugPref">
-                <ValueType>String</ValueType>
-            </State>
-        </States>
+    <SupportURL>https://github.com/sdf-cnicorp/indigo-powerview/</SupportURL>
     <Field type="menu" id="debugPref" defaultValue="WARNING">
         <Label>Debug Info in Logs:</Label>
         <List>

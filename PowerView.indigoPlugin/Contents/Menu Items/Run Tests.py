@@ -1,15 +1,9 @@
+#!/usr/bin/env python
 
+import datetime
 import logging
 import os
 import sys
-from pathlib import PurePath
-
-# sys.path.append(os.path.abspath("../../../../../../../Plugins/PowerView.indigoPlugin/Contents/Server Plugin/pv_tests"))
-
-
-import pydevd_pycharm
-# Debug mode: PDB: 100, PuDB: 101, PyCharm: 102, Debug shell: 200. Use this code in cmdline arg --debug 102
-# pydevd_pycharm.settrace('iwsg2.local', port=5678, stdoutToServer=True, stderrToServer=True, suspend=False)
 
 
 class add_path:
@@ -28,27 +22,31 @@ class add_path:
 
 def run_tests():
     plugin_path = os.path.abspath("../../../../../../../Plugins/PowerView.indigoPlugin/")
-    log_file_path = (plugin_path + "pyTests.log")
-    logging.basicConfig(filename=log_file_path, encoding='utf-8', level=logging.DEBUG)
-    logger.error("Run Tests cwd: {}".format(os.getcwd()))
-    os.chdir(plugin_path)
+    logging.getLogger("Plugin").info("Starting PowerView Tests")  # log to Indigo Event Log
 
-    print("Run Tests cwd: {}".format(os.getcwd()))
-    logger.error("Run Tests cwd: {}".format(os.getcwd()))
+    logger = logging.getLogger('net.segment7.powerview')  # most of the logging during the tests go to a file
+    fh = logging.FileHandler(os.path.join(plugin_path, "../../Logs/net.segment7.powerview/pvTestReport.log"))
+    log_format = "{asctime}.{msecs:.0f}\t{levelname}  \t{funcName} {message}"
+    fh.setFormatter(logging.Formatter(fmt=log_format, datefmt='%Y-%m-%d %H:%M:%S', style="{"))
+    logger.addHandler(fh)
+    logger.setLevel("DEBUG")
+
+    now = datetime.datetime.now()
+    os.chdir(plugin_path)
+    logger.error("Run Tests at {} with cwd: {}".format(now.strftime("%Y-%m-%d %H:%M:%S"), os.getcwd()))
 
     with add_path(os.path.abspath("./Contents/Server Plugin/pv_tests/")):
         logger.error("Sys.path={}\n\n".format(sys.path))
         import pv_runner  # Will be found now that the folder has been added to the sys.path.
 
         try:
-            pv_runner.run_tests(log_file_path)
+            pv_runner.run_tests()
         except Exception:
             logger.exception("Run Tests: Tests Failed")
 
-    logger.error("Run Tests: Tests Complete")
+    logger.info("Run Tests: Tests Complete")
+    logging.getLogger("Plugin").info("PowerView Tests Complete. See pvTestReport.log in the PowerView Logs folder for details.")
 
 
-# if __name__ == '__main__':
-#     logger = logging.getLogger('net.segment7.powerview')
-#     logger.error("Run Tests cwd: {}".format(os.getcwd()))
-#     run_tests()
+if __name__ == '__main__':
+    run_tests()

@@ -1,13 +1,10 @@
 
+import indigo
 import logging
 import os
-from pathlib import PurePath
+# from pathlib import PurePath
 import pytest
 import time
-import pytest_timestamper as timestamper
-import pytester
-import pytest_reportlog as rptlog
-logger = logging.getLogger("net.segment7.powerview")
 
 
 class ResultsCollector:
@@ -26,7 +23,8 @@ class ResultsCollector:
             print('total duration:', collector.total_duration)
 
     """
-    def __init__(self):
+    def __init__(self, logger):
+        self.logger = logger
         self.reports = []
         self.collected = 0
         self.exitcode = 0
@@ -47,8 +45,9 @@ class ResultsCollector:
         self.collected = len(items)
 
     def pytest_terminal_summary(self, terminalreporter, exitstatus):
-        print(exitstatus, dir(exitstatus))
-        self.exitcode = exitstatus.value
+        self.logger.info("exitstatus={}, dir(exitstatus)={}".format(exitstatus, dir(exitstatus)))
+        if exitstatus:
+            self.exitcode = exitstatus.value
         self.passed = len(terminalreporter.stats.get('passed', []))
         self.failed = len(terminalreporter.stats.get('failed', []))
         self.xfailed = len(terminalreporter.stats.get('xfailed', []))
@@ -57,22 +56,25 @@ class ResultsCollector:
         self.total_duration = time.time() - terminalreporter._sessionstarttime
 
 
-def run_tests(log_file_path):
-    logger.error(" ")
+def __init__():
+    indigo.DEBUG_SERVER_IP = "10.10.28.191"  # IP address of the Mac running PyCharm
+
+
+def run_tests():
+    logger = logging.getLogger("net.segment7.powerview")
+    logger.info(" ")
     wd = os.getcwd()
-    logger.error("pv_runner.run_tests: wd={}".format(wd))
-    logger.debug('pv_runner.run_tests: Starting to run all tests in pv_tests folder.')
+    logger.debug("pv_runner.run_tests: Starting to run all tests in pv_tests folder. wd={}".format(wd))
 
-    collector = ResultsCollector()
-    test_details_name = PurePath(os.path.dirname(log_file_path), "pyReport.log")
-    ret_code = pytest.main(plugins=[collector, timestamper, rptlog], args=["-v", "-rA", "--capture=fd", "--report-log=" + str(test_details_name)])
+    collector = ResultsCollector(logger)
+    ret_code = pytest.main(plugins=[collector], args=["-v", "-ra"]) # , "--capture=fd", '--report-log="' + str(test_details_name) + '"'])
 
-    logger.debug('pv_runner.run_tests: Finished all tests in pv_tests folder. Results follow:')
+    logger.info('pv_runner.run_tests: Finished all tests in pv_tests folder. Results follow:')
 
     for report in collector.reports:
-        logger.debug("id: {} outcome: {}".format(report.nodeid, report.outcome))  # etc
-    logger.debug('exit code: {}'.format(collector.exitcode))
-    logger.debug('passed: {}, failed: {}, xfailed: {}, skipped: {}'
+        logger.info("id: {} outcome: {}".format(report.nodeid, report.outcome))  # etc
+    logger.info('exit code: {}'.format(collector.exitcode))
+    logger.info('passed: {}, failed: {}, xfailed: {}, skipped: {}'
                  .format(collector.passed, collector.failed, collector.xfailed, collector.skipped))
-    logger.debug('total duration: {}'.format(collector.total_duration))
-    logger.debug('pytest returned {}.'.format(ret_code))
+    logger.info('total duration: {}'.format(collector.total_duration))
+    logger.info('pytest returned {}.'.format(ret_code))

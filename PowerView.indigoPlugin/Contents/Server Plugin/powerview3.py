@@ -1,4 +1,5 @@
 import base64
+import logging
 import requests
 
 """
@@ -70,12 +71,11 @@ class PowerViewGen3:
     URL_SCENES_ = 'http://{h}/home/scenes/{id}'
     URL_SCENES_ACTIVATE_ = 'http://{h}/home/scenes/{id}/activate'
 
-    def __init__(self, logger):
-        self.logger = logger
+    def __init__(self):
+        self.logger = logging.getLogger("Plugin")
 
     def activateScene(self, hubHostname, sceneId):
         activateSceneUrl = self.URL_SCENES_ACTIVATE_.format(h=hubHostname, id=sceneId)
-
         self.__PUT(activateSceneUrl)
 
     def activateSceneCollection(self, hubHostname, sceneCollectionId):
@@ -147,6 +147,7 @@ class PowerViewGen3:
         else:
             data['batteryLevel'] = 'unk'
 
+        self.logger.debug("shade V3: Return data={}".format(data))
         return data
 
     def shadeIds(self, hubHostname) -> list:

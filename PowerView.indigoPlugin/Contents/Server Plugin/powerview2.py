@@ -9,7 +9,7 @@ class PowerView:
 
     def __init__(self) -> None:
         super().__init__()
-        self.logger = logging.getLogger('Plugin')
+        self.logger = logging.getLogger("Plugin")
 
     def activateScene(self, hubHostname, sceneId):
         activateSceneUrl = 'http://%s/api/scenes?sceneId=%s' % (hubHostname, sceneId)
@@ -53,7 +53,7 @@ class PowerView:
 
         data = self.__GET(roomUrl)['room']
 
-        data['name'] = base64.b64decode(data.pop('name'))
+        data['name'] = base64.b64decode(data.pop('name')).decode()
 
         return data
 
@@ -79,7 +79,7 @@ class PowerView:
         data = self.__GET(scenesURL)['sceneData']
 
         for scene in data:
-            name = base64.b64decode(scene.pop('name'))
+            name = base64.b64decode(scene.pop('name')).decode()
             room = self.room(hubHostname, scene['roomId'])
             scene['name'] = '%s - %s' % (room['name'], name)
 
@@ -92,7 +92,7 @@ class PowerView:
         data = self.__GET(sceneCollectionsUrl)['sceneCollectionData']
 
         for sceneCollection in data:
-            sceneCollection['name'] = base64.b64decode(sceneCollection.pop('name'))
+            sceneCollection['name'] = base64.b64decode(sceneCollection.pop('name')).decode()
 
         return data
 
@@ -102,7 +102,7 @@ class PowerView:
         data = self.__GET(shadeUrl)['shade']
         data.pop('id')
 
-        data['name'] = base64.b64decode(data.pop('name'))
+        data['name'] = base64.b64decode(data.pop('name')).decode()
         data['batteryLevel'] = data.pop('batteryStrength')
         data['generation'] = 2
         if room and 'roomId' in data:
@@ -129,6 +129,7 @@ class PowerView:
         positions['tilt'] = 0.0
         positions['velocity'] = 0.0
         data['positions'] = positions
+        self.logger.debug("shade V2: Return data={}".format(data))
         return data
 
     def shadeIds(self, hubHostname):
@@ -142,13 +143,13 @@ class PowerView:
         try:
             f = requests.get(url, headers={'accept': 'application/json'})
         except requests.exceptions.RequestException as e:
-            self.logger.exception('Error fetching %s: %s' % (url))
+            self.logger.exception("Error fetching {}".format(url))
             return {}
 
         self.logger.debug("    Get from '{}'".format(url))
         self.logger.debug("    Get returned {} response body '{}'".format(f.status_code, f.json()))
         if f.status_code != requests.codes.ok:
-            self.logger.error('Unexpected response fetching %s: %s' % (url, str(f.status_code)))
+            self.logger.error("Unexpected response fetching {}: {}".format(url, str(f.status_code)))
             return {}
 
         response = f.json()
