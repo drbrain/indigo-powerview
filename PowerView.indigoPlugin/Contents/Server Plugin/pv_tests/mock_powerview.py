@@ -68,10 +68,17 @@ mocked_shades3 = [{"id": 1, "type": 5, "name": "QmF5ICBDZW50ZXI=", "ptName": "Ba
                    "positions": {"primary": 0.36, "secondary": 0, "tilt": 0, "velocity": 0}, "signalStrength": -52, "bleName": "R23:3A59",
                    "address": "127.0.0.1:3"}]
 
-mocked_hubs = [{"id": 100, "address": "127.0.0.1:83"}, {"id": 101, "address": "127.0.0.1:82"}]
+mocked_devices = [{'id': 1, 'folderId': 0, 'address': '127.0.0.1:1', 'deviceTypeId': 'PowerViewShade', 'name': 'Shade 1'},
+                  {'id': 10, 'folderId': 0, 'address': '127.0.0.1', 'deviceTypeId': 'PowerViewHub', 'name': 'Hub 10'},
+                  {'id': 20, 'folderId': 0, 'address': '127.0.0.1', 'deviceTypeId': 'PowerViewHub', 'name': 'Hub 20'},
+                  {'id': 201, 'folderId': 0, 'address': '', 'deviceTypeId': 'SomeDev', 'name': 'A Device 201'},
+                  {'id': 2, 'folderId': 0, 'address': '127.0.0.1:2', 'deviceTypeId': 'PowerViewShade', 'name': 'Shade 2'},
+                  {'id': 202, 'folderId': 0, 'address': '', 'deviceTypeId': 'SomeDev', 'name': 'A Device 202'},
+                  {'id': 203, 'folderId': 0, 'address': '203', 'deviceTypeId': 'SomeDev', 'name': 'A Device 203'},
+                  {'id': 3, 'folderId': 0, 'address': '127.0.0.1:3', 'deviceTypeId': 'PowerViewShade', 'name': 'Shade 3'}]
 
 
-class MockedShade:
+class MockedDevice:
     def __init__(self, shade):
         self.shade = shade
 
@@ -103,7 +110,7 @@ class MockedShade:
         raise KeyError
 
 
-class DeviceMock:
+class DevicesMock:
     def __init__(self):
         self.last_item = None
 
@@ -126,25 +133,32 @@ class DeviceMock:
     def iter(self, it_filter=None):
         logger.debug("DeviceMock.iter: self={}, filter={}".format(self, it_filter))
         if not it_filter:
-            self.last_item = [{'id': 1, 'folderId': 0}, {'id': 2, 'folderId': 0}, {'id': 3, 'folderId': 0}]
+            self.last_item = []
+            for item in mocked_devices:
+                self.last_item.append(MockedDevice(item))
+
             logger.debug("DeviceMock.iter: last_item={}".format(self.last_item))
             return self.last_item
 
         elif it_filter.endswith("Hub"):
-            self.last_item = mocked_hubs.copy()
+            self.last_item = []
+            for item in mocked_devices:
+                if item['deviceTypeId'] == 'PowerViewHub':
+                    self.last_item.append(MockedDevice(item))
             logger.debug("DeviceMock.iter: Hub last_item={}".format(self.last_item))
             return self.last_item
 
         elif it_filter.endswith("Shade"):
             self.last_item = []
-            for shade in mocked_shades3.copy():
-                self.last_item.append(MockedShade(shade))
+            for item in mocked_devices:
+                if item['deviceTypeId'] == 'PowerViewShade':
+                    self.last_item.append(MockedDevice(item))
             logger.debug("DeviceMock.iter: Shade last_item={}".format(self.last_item))
             return self.last_item
 
 
 def mock_devices():
-    mocked_device_list = DeviceMock()
+    mocked_device_list = DevicesMock()
     return mocked_device_list
 
 
@@ -217,7 +231,7 @@ def mock_get(url: str, headers: str = None) -> MockResponse:
             shade_id = a_match.group(1)
             if shade_id:
                 resp.data = {'shade': {'id': shade_id,
-                                       'name': 'TG93ZXIgTGVmdA==', 'roomId': 4102, 'groupId': 28514, 'order': 0, 'type': 6,
+                                       'name': 'RG91YmxlIFRyYW5zb20=', 'roomId': 4102, 'groupId': 28514, 'order': 0, 'type': 6,
                                        'batteryStrength': 142, 'batteryStatus': 2, 'batteryKind': 'unassigned',
                                        'firmware': {'revision': 1, 'subRevision': 3, 'build': 1522}, 'signalStrength': 4,
                                        'motor': {'revision': 0, 'subRevision': 0, 'build': 223}, 'aid': 13, 'capabilities': 0,

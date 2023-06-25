@@ -62,12 +62,12 @@ def __init__():
 
 def run_tests():
     logger = logging.getLogger("net.segment7.powerview")
-    logger.info(" ")
     wd = os.getcwd()
     logger.debug("pv_runner.run_tests: Starting to run all tests in pv_tests folder. wd={}".format(wd))
 
     collector = ResultsCollector(logger)
-    ret_code = pytest.main(plugins=[collector], args=["-v", "-ra"]) # , "--capture=fd", '--report-log="' + str(test_details_name) + '"'])
+    # ret_code = pytest.main(plugins=[collector], args=["-v", "-ra", "--report-log={}".format(test_details_name)])
+    ret_code = pytest.main(args=["-v", "-ra"])
 
     logger.info('pv_runner.run_tests: Finished all tests in pv_tests folder. Results follow:')
 

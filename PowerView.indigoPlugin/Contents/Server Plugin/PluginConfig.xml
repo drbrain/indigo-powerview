@@ -1,12 +1,7 @@
 <?xml version="1.0"?>
 <PluginConfig>
     <SupportURL>https://github.com/sdf-cnicorp/indigo-powerview/</SupportURL>
-    <Field type="menu" id="debugPref" defaultValue="WARNING">
+    <Field type="checkbox" id="debugPref" defaultValue="False">
         <Label>Debug Info in Logs:</Label>
-        <List>
-            <Option value="WARNING">None</Option>
-            <Option value="INFO">Some</Option>
-            <Option value="DEBUG">Detailed</Option>
-        </List>
     </Field>
 </PluginConfig>

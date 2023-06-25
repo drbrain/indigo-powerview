@@ -13,43 +13,43 @@ plg = Plugin(pluginId='net.segment7.powerview', pluginDisplayName='PowerViewPlug
 def testbody_create_shade(hub, pv):
     logger.warning("test create_shade: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")
 
 
 def testbody_activate_scene(hub, pv):
     logger.warning("test activate_scene: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")
 
 
 def testbody_activate_scene_collection(hub, pv):
     logger.warning("test activate_scene_collection: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")
 
 
 def testbody_calibrate_shade(hub, pv):
     logger.warning("test calibrate_shade: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")
 
 
 def testbody_jog_shade(hub, pv):
     logger.warning("test jog_shade: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")
 
 
 def testbody_stop_shade(hub, pv):
     logger.warning("test stop_shade: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")
 
 
 def testbody_set_shade_position(hub, pv):
     logger.warning("test set_shade_position: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")
 
 
 def testbody_current_position(hub, pv):
@@ -81,73 +81,73 @@ def testbody_current_position(hub, pv):
 def testbody_discover_shades(hub, pv):
     logger.warning("test discover_shades: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")
 
 
 def testbody_list_hubs(hub, pv):
     logger.warning("test list_hubs: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")
 
 
 def testbody_list_scenes(hub, pv):
     logger.warning("test list_scenes: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")
 
 
 def testbody_list_scene_collections(hub, pv):
     logger.warning("test list_scene_collections: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")
 
 
 def testbody_list_shades(hub, pv):
     logger.warning("test list_shades: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")
 
 
 def testbody_device_start_comm(hub, pv):
     logger.warning("test device_start_comm: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")
 
 
 def testbody_device_stop_comm(hub, pv):
     logger.warning("test device_stop_comm: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")
 
 
 def testbody_get_device_display_state_id(hub, pv):
     logger.warning("test get_device_display_state_id: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")
 
 
 def testbody_run_concurrent_thread(hub, pv):
     logger.warning("test run_concurrent_thread: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")
 
 
 def testbody_validate_device_config_ui(hub, pv):
     logger.warning("test validate_device_config_ui: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")
 
 
 def testbody_validate_action_config_ui(hub, pv):
     logger.warning("test validate_action_config_ui: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")
 
 
 def testbody_create_shade_device(hub, pv):
     logger.warning("test create_shade_device: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")
 
 
 def testbody_find_shade_on_hub(hub, pv):
@@ -167,16 +167,16 @@ def testbody_find_shade_on_hub(hub, pv):
 def testbody_find_shade(hub, pv):
     logger.warning("test find_shade: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")
 
 
 def testbody_update(hub, pv):
     logger.warning("test update: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")
 
 
 def testbody_update_shade_later(hub, pv):
     logger.warning("test update_shade_later: hub={}, pv={}".format(hub, pv))
     # assert False, "Not Yet Implemented."
-    logger.info("==========================")
+    logger.info("========================== Not Yet Implemented.")

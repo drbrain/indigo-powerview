@@ -35,9 +35,8 @@ class Plugin(indigo.PluginBase):
         self.pluginPrefs = pluginPrefs
         self.debugSetting = pluginPrefs.get('debugPref', '')
         self.logger = logging.getLogger("Plugin")
-        if isinstance(self.debugSetting, str):
-            self.logger.setLevel = self.debugSetting
-
+        if isinstance(self.debugSetting, bool):
+            self.debug = self.debugSetting
         self.devices = {}
         self.hubs3 = {}
         self.hubs2 = {}
@@ -124,10 +123,16 @@ class Plugin(indigo.PluginBase):
         hubHostname, shadeId = shade.address.split(':')
 
         if shade.states['generation'] == 2:
-            top = int(float(secondary) / 100.0 * 65535.0)
-            bottom = int(float(primary) / 100.0 * 65535.0)
+            if primary < 101 and secondary < 101:
+                top = int(float(secondary) / 100.0 * 65535.0)
+                bottom = int(float(primary) / 100.0 * 65535.0)
+            else:
+                self.logger.warning(f"setShadePosition: Position uses V2 values 0-65k. Using pri={primary} and sec={secondary} as is.")
+                top = secondary
+                bottom = primary
             self.getPV(hubHostname).setShadePosition(hubHostname, shadeId, top, bottom)
-        else:
+
+        else:  # V3: convert 0-100 values to 0-1.
             primary = float(primary) / 100.0
             secondary = float(secondary) / 100.0
             tilt = float(tilt) / 100.0
@@ -421,9 +426,9 @@ class Plugin(indigo.PluginBase):
                     if aDev.address == hub_address:
                         device = aDev
             if device:
-                if device.states.get('generation', 0) == 3:
+                if hub_address in self.hubs3:
                     gen = "V3"
-                elif device.states.get('generation', 0) == 2:
+                else:
                     gen = "V2"
 
         else:

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import contextlib
 import datetime
 import logging
 import os
@@ -21,17 +22,22 @@ class add_path:
 
 
 def run_tests():
-    plugin_path = os.path.abspath("../../../../../../../Plugins/PowerView.indigoPlugin/")
+    now = datetime.datetime.now()
+    # Scripts run from Menu Items start with cwd:
+    # /Library/Application Support/Perceptive Automation/Indigo 2022.2/IndigoPluginHost3.app/
+    #       Contents/Resources/PlugIns/ScriptExecutor.indigoPlugin/Contents/Server Plugin
+    indigo_base = os.path.abspath("../../../../../../../")
+    plugin_path = os.path.abspath(os.path.join(indigo_base, "Plugins/PowerView.indigoPlugin/"))
     logging.getLogger("Plugin").info("Starting PowerView Tests")  # log to Indigo Event Log
 
     logger = logging.getLogger('net.segment7.powerview')  # most of the logging during the tests go to a file
-    fh = logging.FileHandler(os.path.join(plugin_path, "../../Logs/net.segment7.powerview/pvTestReport.log"))
+    test_details_file_name = os.path.join(indigo_base, "Logs/net.segment7.powerview/pvTestDetails.log")
+    fh = logging.FileHandler(test_details_file_name)
     log_format = "{asctime}.{msecs:.0f}\t{levelname}  \t{funcName} {message}"
     fh.setFormatter(logging.Formatter(fmt=log_format, datefmt='%Y-%m-%d %H:%M:%S', style="{"))
     logger.addHandler(fh)
     logger.setLevel("DEBUG")
 
-    now = datetime.datetime.now()
     os.chdir(plugin_path)
     logger.error("Run Tests at {} with cwd: {}".format(now.strftime("%Y-%m-%d %H:%M:%S"), os.getcwd()))
 
@@ -40,11 +46,14 @@ def run_tests():
         import pv_runner  # Will be found now that the folder has been added to the sys.path.
 
         try:
-            pv_runner.run_tests()
+            with open(os.path.join(indigo_base, "Logs/net.segment7.powerview/pvTestReport.log"), 'w') as std_file:
+                with contextlib.redirect_stdout(std_file):
+                    pv_runner.run_tests()
         except Exception:
             logger.exception("Run Tests: Tests Failed")
 
     logger.info("Run Tests: Tests Complete")
+    logger.info("==============================================================================\n\n\n")
     logging.getLogger("Plugin").info("PowerView Tests Complete. See pvTestReport.log in the PowerView Logs folder for details.")
 
 
