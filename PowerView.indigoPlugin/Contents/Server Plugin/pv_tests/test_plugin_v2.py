@@ -1,101 +1,101 @@
 
 import logging
 from powerview2 import PowerView
+from powerview3 import PowerViewGen3
 import pytest
 import requests
-from pv_tests import mock_powerview as mp
+from .mock_powerview import MockPowerView
 from pv_tests import plugin_body as pb
 try:
     import indigo
 except ImportError:
     pass
 
-logger = logging.getLogger("net.segment7.powerview")
+logger = logging.getLogger("wsgmac.com.test.powerview")
 
 
 @pytest.fixture(autouse=True)
 def setup(monkeypatch):
-    # if not mp.hub_available("V3"):
-    monkeypatch.setattr(requests, "get", mp.mock_get)
-    monkeypatch.setattr(requests, "put", mp.mock_put)
-    monkeypatch.setattr(indigo, "devices", mp.mock_devices())
+    if not MockPowerView.hub_available("V2"):
+        monkeypatch.setattr(PowerView, "do_get", MockPowerView.mock_do_get)
+        monkeypatch.setattr(indigo, "devices", MockPowerView.DevicesMock())
+
+    if not MockPowerView.hub_available("V3"):
+        monkeypatch.setattr(PowerViewGen3, "do_get", MockPowerView.mock_get)
+        monkeypatch.setattr(indigo, "devices", MockPowerView.DevicesMock())
+    monkeypatch.setattr(requests, "put", MockPowerView.mock_put)
+    monkeypatch.setattr(indigo.Device, "replacePluginPropsOnServer", MockPowerView.DevicesMock.MockedDevice.replacePluginPropsOnServer)
 
 
 class TestPluginV2:
+    hub_address = ''
+    pv = None
+
+    COMPARE_DATA = {
+        'CALIBRATE': {'url': 'http://{hub_address}/api/shades/{id}', 'compare_put_send': {'shade': {'motion': 'calibrate'}}},
+        'JOG': {'url': 'http://{hub_address}/api/shades/{id}', 'compare_put_send': {'shade': {'motion': 'jog'}}},
+        'SET_POSITION': {'url': 'http://{hub_address}/api/shades/{id}',
+                         'compare_put_send': {'shade': {'positions': {'position1': 6554, 'posKind1': 1,'position2': 13107, 'posKind2': 2}}}}
+    }
+
     @pytest.fixture(scope="function", autouse=True)
     def set_vals(self):
-        self.hub_address = mp.hub_host2()
-        self.pv = PowerView()
+        self.hub_address = MockPowerView.hub_host2()
+        if not self.pv:
+            self.pv = PowerView()
+            pb.gplg(self.pv, 'V2')
 
     def test_create_shade(self, setup):
-        pb.testbody_create_shade(self.hub_address, self.pv)
+        pb.testbody_create_shade(self.hub_address, self.COMPARE_DATA)
 
     def test_activate_scene(self, setup):
-        pb.testbody_activate_scene(self.hub_address, self.pv)
+        pb.testbody_activate_scene(self.hub_address, self.COMPARE_DATA)
 
     def test_activate_scene_collection(self, setup):
-        pb.testbody_activate_scene_collection(self.hub_address, self.pv)
+        pb.testbody_activate_scene_collection(self.hub_address, self.COMPARE_DATA)
 
     def test_calibrate_shade(self, setup):
-        pb.testbody_calibrate_shade(self.hub_address, self.pv)
+        pb.testbody_calibrate_shade(self.hub_address, self.COMPARE_DATA['CALIBRATE'])
 
     def test_jog_shade(self, setup):
-        pb.testbody_jog_shade(self.hub_address, self.pv)
+        pb.testbody_jog_shade(self.hub_address, self.COMPARE_DATA['JOG'])
 
     def test_stop_shade(self, setup):
-        pb.testbody_stop_shade(self.hub_address, self.pv)
+        pb.testbody_stop_shade(self.hub_address, self.COMPARE_DATA)
 
     def test_set_shade_position(self, setup):
-        pb.testbody_set_shade_position(self.hub_address, self.pv)
+        pb.testbody_set_shade_position(self.hub_address, self.COMPARE_DATA)
 
     def test_current_position(self, setup):
-        # def currentPosition(self, valuesDict, typeId, devId):
-        pb.testbody_current_position(self.hub_address, self.pv)
+        # def getCurrentPosition(self, valuesDict, typeId, devId):
+        pb.testbody_current_position(self.hub_address, self.COMPARE_DATA)
 
     def test_discover_shades(self, setup):
-        pb.testbody_discover_shades(self.hub_address, self.pv)
+        pb.testbody_discover_shades(self.hub_address, self.COMPARE_DATA)
 
     def test_list_hubs(self, setup):
-        pb.testbody_list_hubs(self.hub_address, self.pv)
+        pb.testbody_list_hubs(self.hub_address, self.COMPARE_DATA)
 
     def test_list_scenes(self, setup):
-        pb.testbody_list_scenes(self.hub_address, self.pv)
+        pb.testbody_list_scenes(self.hub_address, self.COMPARE_DATA)
 
     def test_list_scene_collections(self, setup):
-        pb.testbody_list_scene_collections(self.hub_address, self.pv)
+        pb.testbody_list_scene_collections(self.hub_address, self.COMPARE_DATA)
 
     def test_list_shades(self, setup):
-        pb.testbody_list_shades(self.hub_address, self.pv)
+        pb.testbody_list_shades(self.hub_address, self.COMPARE_DATA)
 
     def test_device_start_comm(self, setup):
-        pb.testbody_device_start_comm(self.hub_address, self.pv)
+        pb.testbody_device_start_comm(self.hub_address, self.COMPARE_DATA)
 
     def test_device_stop_comm(self, setup):
-        pb.testbody_device_stop_comm(self.hub_address, self.pv)
-
-    def test_get_device_display_state_id(self, setup):
-        pb.testbody_get_device_display_state_id(self.hub_address, self.pv)
-
-    def test_run_concurrent_thread(self, setup):
-        pb.testbody_run_concurrent_thread(self.hub_address, self.pv)
+        pb.testbody_device_stop_comm(self.hub_address, self.COMPARE_DATA)
 
     def test_validate_device_config_ui(self, setup):
-        pb.testbody_validate_device_config_ui(self.hub_address, self.pv)
+        pb.testbody_validate_device_config_ui(self.hub_address, self.COMPARE_DATA)
 
     def test_validate_action_config_ui(self, setup):
-        pb.testbody_validate_action_config_ui(self.hub_address, self.pv)
-
-    def test_create_shade_device(self, setup):
-        pb.testbody_create_shade_device(self.hub_address, self.pv)
+        pb.testbody_validate_action_config_ui(self.hub_address, self.COMPARE_DATA)
 
     def test_find_shade_on_hub(self, setup):
-        pb.testbody_find_shade_on_hub(self.hub_address, self.pv)
-
-    def test_find_shade(self, setup):
-        pb.testbody_find_shade(self.hub_address, self.pv)
-
-    def test_update(self, setup):
-        pb.testbody_update(self.hub_address, self.pv)
-
-    def test_update_shade_later(self, setup):
-        pb.testbody_update_shade_later(self.hub_address, self.pv)
+        pb.testbody_find_shade_on_hub(self.hub_address, self.COMPARE_DATA)

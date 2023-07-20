@@ -43,7 +43,7 @@
             <Field id="current" type="button">
                 <Label>Lookup Current Position?:</Label>
                 <Title>Current Position</Title>
-                <CallbackMethod>currentPosition</CallbackMethod>
+                <CallbackMethod>getCurrentPosition</CallbackMethod>
             </Field>
             <Field id="lblNumbers" type="label">
                 <Label>Enter a value as a percentage the shade is open, 0-100.</Label>

@@ -1,26 +1,32 @@
+
 import base64
 import logging
+import math
 import requests
+import requests.api
+try:
+    import indigo
+except ImportError:
+    pass
 
 
 class PowerView:
-
     GENERATION = "V2"
 
     def __init__(self) -> None:
         super().__init__()
-        self.logger = logging.getLogger("Plugin")
+        self.logger = logging.getLogger("net.segment7.powerview")
 
     def activateScene(self, hubHostname, sceneId):
         activateSceneUrl = 'http://%s/api/scenes?sceneId=%s' % (hubHostname, sceneId)
 
-        self.__GET(activateSceneUrl)
+        self.get(activateSceneUrl)
 
     def activateSceneCollection(self, hubHostname, sceneCollectionId):
         activateSceneCollectionUrl = \
-                'http://%s/api/scenecollections?scenecollectionid=%s' % (hubHostname, sceneCollectionId)
+            'http://%s/api/scenecollections?scenecollectionid=%s' % (hubHostname, sceneCollectionId)
 
-        self.__GET(activateSceneCollectionUrl)
+        self.get(activateSceneCollectionUrl)
 
     def calibrateShade(self, hubHostname, shadeId):
         shadeUrl = 'http://%s/api/shades/%s' % (hubHostname, shadeId)
@@ -31,7 +37,7 @@ class PowerView:
             }
         }
 
-        self.__PUT(shadeUrl, body)
+        self.put(shadeUrl, body)
 
     def jogShade(self, hubHostname, shadeId):
         shadeUrl = 'http://%s/api/shades/%s' % (hubHostname, shadeId)
@@ -42,24 +48,37 @@ class PowerView:
             }
         }
 
-        self.__PUT(shadeUrl, body)
+        self.put(shadeUrl, body)
 
     def stopShade(self, hubHostname, shadeId):
-        self.logger.error('Stop Shade function is not available on Generation 2 gateway.')
+        indigo.server.log('Stop Shade function is not available on Generation 2 gateway.')
         pass
 
     def room(self, hubHostname, roomId):
         roomUrl = 'http://%s/api/rooms/%s' % (hubHostname, roomId)
 
-        data = self.__GET(roomUrl)['room']
+        data = self.get(roomUrl)['room']
 
         data['name'] = base64.b64decode(data.pop('name')).decode()
 
         return data
 
-    def setShadePosition(self, hubHostname, shadeId, top, bottom):
+    def setShadePosition(self, hubHostname, shadeId, pos):
         shadeUrl = 'http://%s/api/shades/%s' % (hubHostname, shadeId)
 
+        # convert 0-100 values to 0-65535.
+        primary = pos.get('primary', '0')
+        secondary = pos.get('secondary', '0')
+
+        if primary in range(101) and secondary in range(101):
+            # New integer percentage 0 to 100 where 100% means fully open
+            top = int((float(secondary) / 65535.0 * 100.0) + 0.5)
+            bottom = int((float(primary) / 65535.0 * 100.0) + 0.5)
+        else:
+            # Assume Set Shade Position Action has not been edited since the plugin was updated and still uses the V2 position values.
+            self.logger.warning(f"setShadePosition: Position uses V2 values 0-65k. Using bottom={primary} and top={secondary} as is.")
+            top = secondary
+            bottom = primary
         body = {
             'shade': {
                 'positions': {
@@ -71,12 +90,12 @@ class PowerView:
             }
         }
 
-        self.__PUT(shadeUrl, body)
+        self.put(shadeUrl, body)
 
     def scenes(self, hubHostname):
         scenesURL = 'http://%s/api/scenes/' % (hubHostname)
 
-        data = self.__GET(scenesURL)['sceneData']
+        data = self.get(scenesURL)['sceneData']
 
         for scene in data:
             name = base64.b64decode(scene.pop('name')).decode()
@@ -86,10 +105,9 @@ class PowerView:
         return data
 
     def sceneCollections(self, hubHostname):
-        sceneCollectionsUrl = \
-                'http://%s/api/scenecollections/' % (hubHostname)
+        sceneCollectionsUrl = 'http://%s/api/scenecollections/' % (hubHostname)
 
-        data = self.__GET(sceneCollectionsUrl)['sceneCollectionData']
+        data = self.get(sceneCollectionsUrl)['sceneCollectionData']
 
         for sceneCollection in data:
             sceneCollection['name'] = base64.b64decode(sceneCollection.pop('name')).decode()
@@ -99,8 +117,12 @@ class PowerView:
     def shade(self, hubHostname, shadeId, room=False):
         shadeUrl = 'http://%s/api/shades/%s' % (hubHostname, shadeId)
 
-        data = self.__GET(shadeUrl)['shade']
-        data.pop('id')
+        data = self.get(shadeUrl)
+        if data == '':
+            return {}
+
+        data = data.pop('shade')
+        data['shadeId'] = data.pop('id')
 
         data['name'] = base64.b64decode(data.pop('name')).decode()
         data['batteryLevel'] = data.pop('batteryStrength')
@@ -113,7 +135,7 @@ class PowerView:
         positions = data.get('positions', [])
         if 'position1' in positions:
             if positions['posKind1'] == 1:
-                positions['primary'] = positions['position1']/65535
+                positions['primary'] = positions['position1'] / 65535
             else:
                 positions['secondary'] = positions['position1'] / 65535
         if 'position2' in positions:
@@ -129,52 +151,61 @@ class PowerView:
         positions['tilt'] = 0.0
         positions['velocity'] = 0.0
         data['positions'] = positions
+
         self.logger.debug("shade V2: Return data={}".format(data))
         return data
 
     def shadeIds(self, hubHostname):
         shadesUrl = 'http://%s/api/shades/' % hubHostname
 
-        data = self.__GET(shadesUrl)
+        data = self.get(shadesUrl)
+        if data == '':
+            return []
 
         return data['shadeIds']
 
-    def __GET(self, url) -> dict:
+    @staticmethod
+    def to_percent(pos, divr=1.0):
+        return math.trunc((float(pos) / divr * 100.0) + 0.5)
+
+    def do_get(self, url, *param, **kwargs) -> requests.Response:
+        '''This method exists to make it easier to test the plugin.'''
+        return requests.get(url, *param, **kwargs)
+
+    def get(self, url) -> dict:
         try:
-            f = requests.get(url, headers={'accept': 'application/json'})
+            res = self.do_get(url, headers={'accept': 'application/json'})
         except requests.exceptions.RequestException as e:
-            self.logger.exception("Error fetching {}".format(url))
+            self.logger.exception(f"Error fetching {url}", exc_info=True)
+            self.logger.debug(
+                f"    Get from '{url}' returned {'n/a' if not res else res.status_code}, response body '{'n/a' if not res else res.text}'")
             return {}
 
-        self.logger.debug("    Get from '{}'".format(url))
-        self.logger.debug("    Get returned {} response body '{}'".format(f.status_code, f.json()))
-        if f.status_code != requests.codes.ok:
-            self.logger.error("Unexpected response fetching {}: {}".format(url, str(f.status_code)))
+        if res.status_code != requests.codes.ok:
+            self.logger.error(f"Unexpected response fetching {url}: {res.status_code}")
+            self.logger.debug(f"    Get from '{url}' returned {res.status_code}, response body '{res.text}'")
             return {}
 
-        response = f.json()
-
+        response = res.json()
         return response
 
-    def __PUT(self, url, data=None) -> dict:
-
+    def put(self, url, data=None) -> dict:
         try:
             if data:
-                # data = {'positions':data}
                 res = requests.put(url, json=data, headers={'accept': 'application/json'})
             else:
                 res = requests.put(url, headers={'accept': 'application/json'})
 
         except requests.exceptions.RequestException as e:
-            self.logger.exception("Error in put {} with data {}:".format(url, data))
+            self.logger.exception(f"Error in put {url} with data {data}:", exc_info=True)
+            self.logger.debug(
+                f"    Get from '{url}' returned {'n/a' if not res else res.status_code}, response body '{'n/a' if not res else res.text}'")
             return {}
 
-        self.logger.debug("    Put to '{}' with body {}".format(url, data))
-        self.logger.debug("    Put returned {}, response body '{}'".format(res.status_code, res.json()))
         if res.status_code != requests.codes.ok:
             self.logger.error('Unexpected response in put %s: %s' % (url, str(res.status_code)))
+            self.logger.debug(f"    Get from '{url}' returned {res.status_code}, response body '{res.text}'")
             return {}
 
         response = res.json()
-
         return response

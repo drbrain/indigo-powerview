@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import logging
+
 from powerview2 import PowerView
 from powerview3 import PowerViewGen3
 import requests
@@ -9,6 +9,14 @@ try:
     import indigo
 except ImportError:
     pass
+
+POWERVIEW_DEVICES = 'net.segment7.powerview.self'
+POWERVIEW_ID = 'net.segment7.powerview'
+POWERVIEW_HUB = 'PowerViewHub'
+POWERVIEW_SHADE = 'PowerViewShade'
+
+powerview2: PowerView = None
+powerview3: PowerViewGen3 = None
 
 
 class Plugin(indigo.PluginBase):
@@ -33,41 +41,44 @@ class Plugin(indigo.PluginBase):
         super(Plugin, self).__init__(pluginId, pluginDisplayName, pluginVersion, pluginPrefs)
 
         self.pluginPrefs = pluginPrefs
-        self.debugSetting = pluginPrefs.get('debugPref', '')
-        self.logger = logging.getLogger("Plugin")
-        if isinstance(self.debugSetting, bool):
-            self.debug = self.debugSetting
+        self.debugSetting = pluginPrefs.get('debugPref', False)
+        # self.logger = logging.getLogger(POWERVIEW_ID)
         self.devices = {}
-        self.hubs3 = {}
-        self.hubs2 = {}
-        self.powerview2 = None
-        self.powerview3 = None
+        self.hubs = {}
+        self.debug = self.debugSetting
 
-    #########################################
-    #  Devices
-    #########################################
-    def createShade(self, hubHostname, shadeId, hubId):
-        address = "%s:%s".format((hubHostname, shadeId))
+    class HDHub:
+        def __init__(self, hub_address, generation):
+            global powerview2
+            global powerview3
 
-        if self.findShade(address):
-            self.logger.info("Shade {} already exists".format(address))
-            return
+            # self.logger = logging.getLogger("net.segment7.powerview")
 
-        folderId = 0
-        if hubId:
-            hub = indigo.devices[hubId]
-            folderId = hub.folderId
+            self.hub_address = hub_address
+            self.generation = generation
+            if generation == 'V3' or generation == 3:
+                self._driver = powerview3
+            else:
+                self._driver = powerview2
+            # self.logger.debug(f"HDHub: hub_address={self.hub_address}, generation={self.generation}, driver={self._driver}")
 
-        self.logger.info("Creating shade {}".format(address))
-        shade_data = self.findShadeOnHub(hubHostname, shadeId)
+        @property
+        def driver(self):
+            if not self._driver:
+                self._driver = powerview3 if self.generation == 'V3' else powerview2
+            return self._driver
 
-        new_shade = self.create_shade_device(address, shade_data, folderId)
-        if new_shade:
-            new_shade.replaceOnServer()
-            self.updateShadeLater(new_shade)
-            return True
+        @driver.setter
+        def driver(self, new_driver):
+            self._driver = new_driver
 
-        return False
+    def startup(self):
+        global powerview2
+        global powerview3
+
+        # prefs are set when testing
+        powerview2 = self.pluginPrefs.get("pv2", PowerView())
+        powerview3 = self.pluginPrefs.get("pv3", PowerViewGen3())
 
     #########################################
     #  Actions
@@ -76,77 +87,66 @@ class Plugin(indigo.PluginBase):
         hub = indigo.devices[action.deviceId]
         sceneId = action.props['sceneId']
 
-        self.logger.info('activate scene %s on hub %s' % (sceneId, hub.name))
-        self.getPV(hub.address).activateScene(hub.address, sceneId)
-        self.updateShadeLater(hub)
+        self.logger.info(f"activate scene {sceneId} on hub {hub.name}")
+        indigo.server.log(f"activate scene {sceneId} on hub {hub.name}")
+        self.get_pv(hub.address).activateScene(hub.address, sceneId)
+        self.update_shade_later(hub)
 
     def activateSceneCollection(self, action):
         hub = indigo.devices[action.deviceId]
         sceneCollectionId = action.props['sceneCollectionId']
 
-        self.logger.info('activate scene collection %s on hub %s' % (sceneCollectionId, hub.name))
-        self.getPV(hub.address).activateSceneCollection(hub.address, sceneCollectionId)
-        self.updateShadeLater(hub)
+        self.logger.info(f'activate scene collection {sceneCollectionId} on hub {hub.name}')
+        indigo.server.log(f'activate scene collection {sceneCollectionId} on hub {hub.name}')
+        self.get_pv(hub.address).activateSceneCollection(hub.address, sceneCollectionId)
+        self.update_shade_later(hub)
 
     def calibrateShade(self, action):
         shade = indigo.devices[action.deviceId]
         hubHostname, shadeId = shade.address.split(':')
 
         self.logger.info('Calibrating shade %s (%s) (id:%s)' % (shade.name, shade.id, shadeId))
-        self.getPV(hubHostname).calibrateShade(hubHostname, shadeId)
+        indigo.server.log('Calibrating shade %s (%s) (id:%s)' % (shade.name, shade.id, shadeId))
+        self.get_pv(hubHostname).calibrateShade(hubHostname, shadeId)
 
     def jogShade(self, action):
         shade = indigo.devices[action.deviceId]
         hubHostname, shadeId = shade.address.split(':')
 
         self.logger.info('Jogging shade %s (%s) (id:%s)' % (shade.name, shade.id, shadeId))
-        self.getPV(hubHostname).jogShade(hubHostname, shadeId)
-        self.updateShadeLater(shade)
+        indigo.server.log('Jogging shade %s (%s) (id:%s)' % (shade.name, shade.id, shadeId))
+        self.get_pv(hubHostname).jogShade(hubHostname, shadeId)
+        self.update_shade_later(shade)
 
     def stopShade(self, action):
         shade = indigo.devices[action.deviceId]
         hubHostname, shadeId = shade.address.split(':')
         self.logger.info('Stopping shade %s (%s) (id:%s)' % (shade.name, shade.id, shadeId))
-        self.getPV(hubHostname).stopShade(hubHostname, shadeId)
-        self.updateShadeLater(shade)
+        indigo.server.log('Stopping shade %s (%s) (id:%s)' % (shade.name, shade.id, shadeId))
+        self.get_pv(hubHostname).stopShade(hubHostname, shadeId)
+        self.update_shade_later(shade)
 
     def setShadePosition(self, action):
         shade = indigo.devices[action.deviceId]
-        primary = action.props.get('primary', '0')
-        secondary = action.props.get('secondary', '0')
-        tilt = action.props.get('tilt', '0')
-        velocity = action.props.get('velocity', '0')
+        primary = int(action.props.get('primary', '0'))
+        secondary = int(action.props.get('secondary', '0'))
+        tilt = int(action.props.get('tilt', '0'))
+        velocity = int(action.props.get('velocity', '0'))
 
-        self.logger.info('Setting position of %s (%s) primary (bottom): %s, secondary (top): %s, tilt: %s, velocity: %s' %
+        self.logger.debug('Setting position of %s (%s) to primary (bottom): %s, secondary (top): %s, tilt: %s, velocity: %s' %
                          (shade.name, action.deviceId, primary, secondary, tilt, velocity))
 
         hubHostname, shadeId = shade.address.split(':')
 
-        if shade.states['generation'] == 2:
-            if primary < 101 and secondary < 101:
-                top = int(float(secondary) / 100.0 * 65535.0)
-                bottom = int(float(primary) / 100.0 * 65535.0)
-            else:
-                self.logger.warning(f"setShadePosition: Position uses V2 values 0-65k. Using pri={primary} and sec={secondary} as is.")
-                top = secondary
-                bottom = primary
-            self.getPV(hubHostname).setShadePosition(hubHostname, shadeId, top, bottom)
+        positions = {"primary": primary, "secondary": secondary, "tilt": tilt, "velocity": velocity}
+        self.get_pv(hubHostname).setShadePosition(hubHostname, shadeId, positions)
 
-        else:  # V3: convert 0-100 values to 0-1.
-            primary = float(primary) / 100.0
-            secondary = float(secondary) / 100.0
-            tilt = float(tilt) / 100.0
-            velocity = float(velocity) / 100.0
-
-            positions = {"primary": primary, "secondary": secondary, "tilt": tilt, "velocity": velocity}
-            self.getPV(hubHostname).setShadePosition(hubHostname, shadeId, positions)
-
-        self.updateShadeLater(shade)
+        self.update_shade_later(shade)
 
     #########################################
     #  Indigo UI Support Routines
     #########################################
-    def currentPosition(self, valuesDict, typeId, devId):
+    def getCurrentPosition(self, valuesDict, typeId, devId):
         """ Returns the current values of primary, secondary, tilt and velocity for
             existing shade devices. If the shade device is new, the devId will be
             zero, so the shade  address is unavailable.
@@ -158,41 +158,43 @@ class Plugin(indigo.PluginBase):
             shade = indigo.devices[devId]
             hubHostname, shadeId = shade.address.split(':')
 
-            self.getPV(hubHostname).jogShade(hubHostname, shadeId)
-            data = self.getPV(hubHostname).shade(hubHostname, shadeId)
+            self.get_pv(hubHostname).jogShade(hubHostname, shadeId)
+            data = self.get_pv(hubHostname).shade(hubHostname, shadeId)
 
             # Enable/disable entry fields so only those needed are enabled.
             capabilities = data.get('capabilities', -1)
             valuesDict['enablePri'] = (capabilities in [0, 1, 2, 3, 4, 6, 7, 8, 9, 10])  # Primary
             valuesDict['enableSec'] = (capabilities in [7, 8, 9, 10])  # Secondary
+
+            pos = data.get('positions')
+            if pos:
+                valuesDict['primary'] = "{:.0f}".format(pos['primary'])
+                valuesDict['secondary'] = "{:.0f}".format(pos['secondary'])
+                valuesDict['tilt'] = "{:.0f}".format(pos['tilt'])
+                valuesDict['velocity'] = "{:.0f}".format(pos['velocity'])
+                valuesDict['enableTlt'] = (capabilities in [1, 2, 4, 5, 9, 10])  # Tilt
+
             if shade.states['generation'] == 2:  # Gen 2
                 valuesDict['enableTlt'] = False  # Tilt
                 valuesDict['enableVel'] = False
 
-            pos = data.get('positions')
-            if pos:
-                valuesDict['primary'] = "{:.0f}".format(self.to_percent(pos['primary']))
-                valuesDict['secondary'] = "{:.0f}".format(self.to_percent(pos['secondary']))
-                valuesDict['tilt'] = "{:.0f}".format(self.to_percent(pos['tilt']))
-                valuesDict['velocity'] = "{:.0f}".format(self.to_percent(pos['velocity']))
-                valuesDict['enableTlt'] = (capabilities in [1, 2, 4, 5, 9, 10])  # Tilt
-
         return valuesDict
 
-    def discoverShades(self, valuesDict, typeId, deviceId):
-        address = valuesDict['address']
-        gen = self.validate_hub(address)
-        if gen not in ["V3", "V2"]:
+    def discoverShades(self, valuesDict, typeId, hub_deviceId):
+        hub_address = valuesDict.get('address')
+
+        if not hub_address or not self.validate_hub(hub_address):
             valuesDict['message'] = "The Hostname/IP must be the address of a valid Hunter Douglas hub or gateway."
             return valuesDict
 
-        self.logger.info('Discovering shades on %s' % address)
-        shadeIds = self.getPV(address).shadeIds(address)
+        self.logger.info(f'Discovering shades on {hub_address}')
+        indigo.server.log(f'Discovering shades on {hub_address}')
+        shadeIds = self.get_pv(hub_address).shadeIds(hub_address)
         device_count = 0
 
         for shadeId in shadeIds:
-            if self.createShade(address, shadeId, deviceId):
-                device_count = device_count + 1
+            if self.create_shade(hub_address, shadeId, hub_deviceId):
+                device_count += 1
 
         valuesDict['message'] = "Discovered {} Shade{}, and Created {} Device{}.".format(
             len(shadeIds), 's' if len(shadeIds) != 1 else '', device_count, 's' if device_count != 1 else '')
@@ -201,7 +203,7 @@ class Plugin(indigo.PluginBase):
 
     def listHubs(self, filter="", valuesDict="", type="", targetId=0):
         hub_list = []
-        my_devices = indigo.devices.iter('self.PowerViewHub')
+        my_devices = indigo.devices.iter(POWERVIEW_HUB)
         for device in my_devices:
             hub_list.append([device.id, device.name])
 
@@ -211,7 +213,7 @@ class Plugin(indigo.PluginBase):
     def listScenes(self, filter="", valuesDict="", type="", targetId=0):
         hub = self.devices[targetId]
 
-        scenes = self.getPV(hub.address).scenes(hub.address)
+        scenes = self.get_pv(hub.address).scenes(hub.address)
         scene_list = []
 
         for scene in scenes:
@@ -220,10 +222,10 @@ class Plugin(indigo.PluginBase):
         scene_list = sorted(scene_list, key=lambda pair: pair[1])
         return scene_list
 
-    def listSceneCollections(self, filter="", valuesDict="", type="", targetId=0):
+    def listSceneCollections(self, filter="", valuesDict="", type="", targetId=None):
         hub = self.devices[targetId]
 
-        data = self.getPV(hub.address).sceneCollections(hub.address)
+        data = self.get_pv(hub.address).sceneCollections(hub.address)
         scene_list = []
 
         for sceneCollection in data:
@@ -235,22 +237,22 @@ class Plugin(indigo.PluginBase):
     def listShades(self, filter="", valuesDict=None, typeId="", targetId=0):
         """ Produces a list of all shades on all hubs that do NOT exist as devices."""
         shade_list = []
-        my_devices = indigo.devices.iter('self.PowerViewHub')
+        my_devices = indigo.devices.iter(POWERVIEW_HUB)
 
         if my_devices:
             for hub in my_devices:
-                shade_devices = indigo.devices.iter('self.PowerViewShade')
+                shade_devices = indigo.devices.iter(POWERVIEW_SHADE)
                 shade_dev_addresses = []
                 for dev in shade_devices:
                     shade_dev_addresses.append(dev.address)
 
-                shade_ids = self.getPV(hub.address).shadeIds(hub.address)
+                shade_ids = self.get_pv(hub.address).shadeIds(hub.address)
                 for shade_id in shade_ids:
                     address = '%s:%s' % (hub.address, shade_id)
 
                     if address not in shade_dev_addresses:
-                        shade = self.getPV(hub.address).shade(hub.address, shade_id)
-                        room_name = self.getPV(hub.address).room(hub.address, shade['roomId'])['name']
+                        shade = self.get_pv(hub.address).shade(hub.address, shade_id)
+                        room_name = self.get_pv(hub.address).room(hub.address, shade['roomId'])['name']
                         shade_name = shade['name']
                         shade_list.append([address, '%s - %s' % (room_name, shade_name)])
 
@@ -261,8 +263,18 @@ class Plugin(indigo.PluginBase):
     #########################################
     #  Indigo Defined
     #########################################
+    def closedPrefsConfigUi(self, valuesDict, userCancelled):
+        if not userCancelled:
+            self.debugSetting = valuesDict.get('debugPref', False)
+            if isinstance(self.debugSetting, bool):
+                if self.debugSetting:
+                    self.logger.setLevel('DEBUG')
+                else:
+                    self.logger.setLevel('INFO')
+        return True
+
     def deviceStartComm(self, device):
-        if device.deviceTypeId == "PowerViewHub":
+        if device.deviceTypeId == POWERVIEW_HUB:
             self.validate_hub(device.address, device=device)
 
         if device.id not in self.devices:
@@ -276,19 +288,17 @@ class Plugin(indigo.PluginBase):
     def getDeviceDisplayStateId(self, dev):
         """ Returns the property name to be shown in the State column, since the <UiDisplayStateId>
         tag seems to be ignored (and undocumented)."""
-        if dev.deviceTypeId == 'PowerViewShade':
+        if dev.deviceTypeId == POWERVIEW_SHADE:
             return 'open'
         return None
 
     def runConcurrentThread(self):
         try:
             while True:
-                for shade in indigo.devices.iter('self.PowerViewShade'):
+                for shade in indigo.devices.iter(POWERVIEW_SHADE):
                     props = shade.pluginProps
                     need_upd = props.get('need_update', 0)
                     if need_upd > 0:
-                        # update device with new position
-                        # self.updateShade(shade)
                         need_upd -= 1
                         # This props update will trigger call to deviceStartComm which will update the position
                         props.update({'need_update': need_upd})
@@ -308,7 +318,7 @@ class Plugin(indigo.PluginBase):
                 pos_val = valuesDict.get(pos_name, '0')
                 pos_val = int(pos_val) if pos_val.isdigit() else -1
                 if pos_val not in range(0, 101):
-                    errors_dict[pos_name] = "'{}' must be a percentage 0-100, where 0 is closed and 100 is fully open.".format(pos_name)
+                    errors_dict[pos_name] = "'{}' must be a percentage 0-100, where 0 is closed and 100 is fully open.".format(pos_name.title())
                     valid = False
 
         if not valid:
@@ -318,174 +328,195 @@ class Plugin(indigo.PluginBase):
     def validateDeviceConfigUi(self, valuesDict, typeId, devId):
         valid = True
         errors_dict = indigo.Dict()
-        if typeId == 'PowerViewShade':
-            heading = valuesDict.get('heading', '0')
-            heading = int(heading) if heading.isdigit() else -1
-            if heading not in range(0, 361):
+        if typeId == POWERVIEW_SHADE:
+            heading = valuesDict.get('heading')
+            if heading and heading not in range(0, 361):
                 errors_dict['heading'] = "Heading must be a compass reading from 0 to 360."
                 valid = False
 
-            shade = indigo.devices[devId]
-            props = shade.pluginProps
-            props['stateField'] = valuesDict.get('stateField', '0')
-            shade.replacePluginPropsOnServer(props)
+            state_field = valuesDict.get('stateField', '0')
+            if state_field and state_field not in range(5):
+                errors_dict['stateField'] = "Invalid selection."
+                valid = False
 
-        elif typeId == 'PowerViewHub':
+            if valid:
+                shade = indigo.devices[devId]
+                props = shade.pluginProps
+                props['stateField'] = state_field if state_field else 0
+                shade.replacePluginPropsOnServer(props)
+
+        elif typeId == POWERVIEW_HUB:
             hub_address = valuesDict.get("address", None)
             if not hub_address:
                 errors_dict['address'] = "The Hostname/IP must be the address of a valid Hunter Douglas hub or gateway."
                 valid = False
-            gen = self.validate_hub(hub_address)
-            if gen not in ["V3", "V2"]:
+
+            if not self.validate_hub(hub_address):
                 errors_dict['address'] = "That Hostname/IP is not the address of a valid Hunter Douglas hub or gateway."
+                valid = False
 
         if not valid:
             return valid, valuesDict, errors_dict
-
-        return valid, valuesDict
-
-    def validatePrefsConfigUi(self, valuesDict):
-        self.debugSetting = valuesDict.get('debugPref', '')
-        if isinstance(self.debugSetting, str):
-            self.logger.info("About to set the level to {}".format(self.debugSetting))
-            self.logger.setLevel = self.debugSetting
-        return True
+        else:
+            return valid, valuesDict
 
     #########################################
-    #  Utilities
+    #  Utilities. Only used in this file.
     #########################################
-    def create_shade_device(self, address, data, folderId):
+    def create_shade(self, hub_hostname, shade_id, hub_id):
+        shade_address = f"{hub_hostname}:{shade_id}"
+
+        for device in indigo.devices.iter(POWERVIEW_DEVICES):
+            self.logger.debug(f"device.address={device.address}")
+            if device.address == shade_address:
+                self.logger.info("Shade {} already exists".format(shade_address))
+                indigo.server.log("Shade {} already exists".format(shade_address))
+                return
+
+        folder_id = None
+        if hub_id:
+            hub = indigo.devices[hub_id]
+            folder_id = hub.folderId
+
+        self.logger.info("Creating shade {}".format(shade_address))
+        indigo.server.log("Creating shade {}".format(shade_address))
+        shade_data = self.find_shade_on_hub(hub_hostname, shade_id)
+
+        try:
+            new_shade = self.create_shade_device(shade_address, shade_data, folder_id)
+            if new_shade:
+                new_shade.replaceOnServer()
+                self.update_shade_later(new_shade)
+                return True
+        except:
+            pass
+
+        return False
+
+    def create_shade_device(self, address, data, folder_id):
         name = data['name']
+        room = '' if 'room' not in data else 'in {}'.format(data['room'])
         new_shade = None
 
         try:
             new_shade = indigo.device.create(
                 protocol=indigo.kProtocol.Plugin,
                 address=address,
-                deviceTypeId='PowerViewShade',
+                deviceTypeId=POWERVIEW_SHADE,
+                pluginId=POWERVIEW_ID,
                 name=name,
-                description="Shade {} in {}".format(data['name'], data['room']),
+                description="Shade {} {}".format(data['name'], room),
                 props={'stateField': 0},  # default to 0 for primary position as visible state
-                folder=folderId
+                folder=folder_id
             )
-        except Exception:
-            self.logger.exception("Create failed for shade {} at address {}.".format(name, address))
+        except (OSError, LookupError) as ex1:
+            self.logger.exception(f"Create failed for shade {name} at address {address}.", exc_info=True)
+            # raise ex1
 
         return new_shade
 
-    def findShadeOnHub(self, hubHostname, shadeId, need_room=False):
-        shade_data = self.getPV(hubHostname).shade(hubHostname, shadeId, room=need_room)
+    def find_shade_on_hub(self, hubHostname, shadeId, need_room=False):
+        shade_data = self.get_pv(hubHostname).shade(hubHostname, shadeId, room=need_room)
+        if not shade_data:
+            return {}
+
         shade_data['shadeType'] = self.SHADE_TYPE[shade_data['capabilities']]
 
         if 'positions' in shade_data:
-            shadePositions = shade_data.pop('positions')
-            shadePositions['open'] = ''
-            shade_data.update(shadePositions)
+            shade_positions = shade_data.pop('positions')
+            shade_positions['open'] = ''
+            shade_data.update(shade_positions)
         return shade_data
 
-    def findShade(self, address):
-        for device in indigo.devices.iter('self.PowerViewShade'):
-            if device.address == address:
-                return device
-
-        return None
-
-    def getPV(self, hub_address):
+    def get_pv(self, hub_address):
         """ Detects and returns the correct powerview class, based on how the gateway responds."""
-
-        if hub_address in self.hubs3:
-            if not self.powerview3:
-                self.powerview3 = PowerViewGen3()
-            return self.powerview3
-
-        elif hub_address in self.hubs2:
-            if not self.powerview2:
-                self.powerview2 = PowerView()
-            return self.powerview2
+        pv = None
+        if hub_address in self.hubs:
+            hub = self.hubs[hub_address]
+            pv = hub.driver
 
         else:
-            gen = self.validate_hub(hub_address)
-            if gen == "V3":
-                if not self.powerview3:
-                    # Cannot update self.hubs3 since address may be new so device does not yet exist.
-                    self.powerview3 = PowerViewGen3()
-                return self.powerview3
-            elif gen == "V2":
-                if not self.powerview2:
-                    self.powerview2 = PowerView()
-                return self.powerview2
-            else:
-                raise ValueError("Invalid hub address ({})".format(hub_address))
+            if self.validate_hub(hub_address):
+                hub = self.hubs[hub_address]
+                pv = hub.driver
+
+        return pv
 
     def validate_hub(self, hub_address, device=None):
-        gen = ""
+        """Validates that the supplied hub address is a valid hub.
+            If the indigo device is supplied, or it can be looked up, the hub is added to the list of known hubs so
+            the next time it can be found fast."""
+        global powerview2
+        global powerview3
 
-        if hub_address in self.hubs3 or hub_address in self.hubs2:
-            if not device:
-                for aDev in indigo.devices.iter("self.PowerViewHub"):
-                    if aDev.address == hub_address:
-                        device = aDev
-            if device:
-                if hub_address in self.hubs3:
-                    gen = "V3"
-                else:
-                    gen = "V2"
+        gen = None
+        if not hub_address:
+            pass
+
+        elif hub_address in self.hubs:
+            gen = self.hubs[hub_address].generation
+
+        elif device is not None and 'generation' in device.states:
+            hub = self.HDHub(hub_address, generation=device.states['generation'])
+            self.hubs[hub_address] = hub
 
         else:
-            home = requests.get("http://{}/home".format(hub_address))
-            if home.status_code == requests.codes.ok:
+            try:
+                home = powerview3.do_get(f"http://{hub_address}/home", timeout=30.0)
+            except OSError:
+                home = None
+                self.logger.debug(f"validate_hub: Timeout on get http://{hub_address}/home")
+            if home and home.status_code == requests.codes.ok:
                 gen = "V3"
 
             else:
-                home = requests.get("http://{}/api/fwversion".format(hub_address))
-                if home.status_code == requests.codes.ok:
+                try:
+                    home = powerview2.do_get(f"http://{hub_address}/api/fwversion", timeout=30.0)
+                except OSError:
+                    home = None
+                    self.logger.debug(f"validate_hub: Timeout on get http://{hub_address}/api/fwversion")
+                if home and home.status_code == requests.codes.ok:
                     gen = "V2"
 
-        if not (hub_address in self.hubs3 or hub_address in self.hubs2):
-            if not device:
-                for aDev in indigo.devices.iter("self.PowerViewHub"):
-                    if aDev.address == hub_address:
-                        device = aDev
-            if device:
-                if gen == "V3" or device.states.get('generation', 0) == 3:
-                    self.hubs3[device.address] = device
-                elif device.states.get('generation', 0) == 2:
-                    self.hubs2[device.address] = device
+        if hub_address not in self.hubs and gen:
+            hub = self.HDHub(hub_address, generation=gen)
+            self.hubs[hub_address] = hub
 
         if not gen:
-            raise KeyError("Invalid hub address ({})".format(hub_address))
+            self.logger.error(f'Hub {hub_address} not found.')
+            # do not raise KeyError(f"Invalid hub address: {hub_address}")
+
         return gen
 
-    @staticmethod
-    def to_percent(pos, divr=1.0):
-        return float(pos) / divr * 100.0
-
     def update(self, device):
-        if device.deviceTypeId == 'PowerViewShade':
-            self.updateShade(device)
+        if device.deviceTypeId == POWERVIEW_SHADE:
+            self.update_shade(device)
 
-        elif device.deviceTypeId == 'PowerViewHub':
-            pv = self.getPV(device.address)
-            gen = pv.GENERATION[1]  # select the digit after the leading 'V'
-            device.stateListOrDisplayStateIdChanged()  # Ensure any new states are added to this shade
-            device.updateStateOnServer(key='generation', value=gen)
+        elif device.deviceTypeId == POWERVIEW_HUB:
+            pv = self.get_pv(device.address)
+            if pv:
+                gen = pv.GENERATION[1]  # select the digit after the leading 'V'
+                device.stateListOrDisplayStateIdChanged()  # Ensure any new states are added to this shade
+                device.updateStateOnServer(key='generation', value=gen)
 
-    def updateShade(self, shade):
-        self.logger.debug("Updating shade {}".format(shade.address))  # show this in Event Log window
-
+    def update_shade(self, shade):
         if shade.address == '':
             return
 
         try:
             hubHostname, shadeId = shade.address.split(':')
 
-            data = self.findShadeOnHub(hubHostname, shadeId)
+            data = self.find_shade_on_hub(hubHostname, shadeId)
+            if not data:
+                return
             data.pop('name')  # don't overwrite local changes
 
+            # Get all states defined for this device, since they may have been upgraded.
             shade_states_details = super(Plugin, self).getDeviceStateList(shade)
             shade_states = []
-            for shade_states_detail in shade_states_details:
-                shade_states.append(shade_states_detail['Key'])
+            if shade_states:
+                for shade_states_detail in shade_states_details:
+                    shade_states.append(shade_states_detail['Key'])
 
             # update the shade state for items in the device.
             # PV2 hubs have at least one additional data item
@@ -494,43 +525,43 @@ class Plugin(indigo.PluginBase):
             for key in data.keys():
                 if key in shade_states:  # update if hub has state key from Devices.xml. This adds new states.
                     if key == 'open':
-                        self.updateShadeOpenState(shade, data, key)
+                        self.update_shade_open_state(shade, data, key)
                     else:
                         shade.updateStateOnServer(key=key, value=data[key])
-        except Exception as ex:
-            self.logger.exception("Exception in updateShade.")
-            raise ex
+        except:
+            self.logger.exception("Exception in updateShade.", exc_info=True)
+            pass
 
-    def updateShadeLater(self, dev):
+    def update_shade_later(self, dev):
         """ Save an indicator in plugin properties for this shade to signal to do an update later, after it has moved. """
-        if dev.deviceTypeId == 'PowerViewShade':
+        if dev.deviceTypeId == POWERVIEW_SHADE:
             props = dev.pluginProps
             props.update({'need_update': 4})
             dev.replacePluginPropsOnServer(props)
 
-        elif dev.deviceTypeId == 'PowerViewHub':
-            for shade in indigo.devices.iter('self.PowerViewShade'):
+        elif dev.deviceTypeId == POWERVIEW_HUB:
+            for shade in indigo.devices.iter(POWERVIEW_SHADE):
                 if shade.address.startswith(dev.address):
                     props = shade.pluginProps
                     props.update({'need_update': 4})
                     shade.replacePluginPropsOnServer(props)
 
-    def updateShadeOpenState(self, shade, data, key):
-        stateField = shade.pluginProps.get('stateField', 0)
+    def update_shade_open_state(self, shade, data, key):
+        state_field = shade.pluginProps.get('stateField', 0)
 
-        if stateField == 0:  # 0 - Primary
-            shade.updateStateOnServer(key=key, value="{:.0f}% Open".format(self.to_percent(data['primary'])), decimalPlaces=0)
+        if state_field == 0:  # 0 - Primary
+            shade.updateStateOnServer(key=key, value="{:.0f}% Open".format(data['primary']), decimalPlaces=0)
 
-        elif stateField == 1:  # 1 - Primary and Secondary
-            shade.updateStateOnServer(key=key, value="{:.0f}% P, {:.0f}% S".format(self.to_percent(data['primary']),
-                                                                                   self.to_percent(data['secondary'])), decimalPlaces=0)
-        elif stateField == 2:  # 2 - Primary and Tilt
-            shade.updateStateOnServer(key=key, value="{:.0f}% P, {:.0f}% T".format(self.to_percent(data['primary']),
-                                                                                   self.to_percent(data['tilt'])), decimalPlaces=0)
-        elif stateField == 3:  # 3 - Tilt
-            shade.updateStateOnServer(key=key, value="{:.0f}% Open".format(self.to_percent(data['tilt'])), decimalPlaces=0)
+        elif state_field == 1:  # 1 - Primary and Secondary
+            shade.updateStateOnServer(key=key, value="{:.0f}% P, {:.0f}% S".format(data['primary'],
+                                                                                   data['secondary']), decimalPlaces=0)
+        elif state_field == 2:  # 2 - Primary and Tilt
+            shade.updateStateOnServer(key=key, value="{:.0f}% P, {:.0f}% T".format(data['primary'],
+                                                                                   data['tilt']), decimalPlaces=0)
+        elif state_field == 3:  # 3 - Tilt
+            shade.updateStateOnServer(key=key, value="{:.0f}% Open".format(data['tilt']), decimalPlaces=0)
 
-        elif stateField == 4:  # 4 - Primary Secondary and Tilt
-            shade.updateStateOnServer(key=key, value="{:.0f}% P, {:.0f}% S, {:.0f}% T".format(self.to_percent(data['primary']),
-                                                                                              self.to_percent(data['secondary']),
-                                                                                              self.to_percent(data['tilt'])), decimalPlaces=0)
+        elif state_field == 4:  # 4 - Primary Secondary and Tilt
+            shade.updateStateOnServer(key=key, value="{:.0f}% P, {:.0f}% S, {:.0f}% T".format(data['primary'],
+                                                                                              data['secondary'],
+                                                                                              data['tilt']), decimalPlaces=0)

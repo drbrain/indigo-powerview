@@ -1,6 +1,12 @@
+
 import base64
 import logging
+import math
 import requests
+try:
+    import indigo
+except ImportError:
+    pass
 
 """
 Shade Capabilities:
@@ -72,48 +78,55 @@ class PowerViewGen3:
     URL_SCENES_ACTIVATE_ = 'http://{h}/home/scenes/{id}/activate'
 
     def __init__(self):
-        self.logger = logging.getLogger("Plugin")
+        self.logger = logging.getLogger("net.segment7.powerview")
 
     def activateScene(self, hubHostname, sceneId):
         activateSceneUrl = self.URL_SCENES_ACTIVATE_.format(h=hubHostname, id=sceneId)
-        self.__PUT(activateSceneUrl)
+        self.put(activateSceneUrl)
 
     def activateSceneCollection(self, hubHostname, sceneCollectionId):
-        self.logger.error('Scene Collections are not available on Generation 3+ gateway. Use a Multi-Room Scene instead.')
+        indigo.server.log('Scene Collections are not available on Generation 3+ gateway. Use a Multi-Room Scene instead.')
 
     def calibrateShade(self, hubHostname, shadeId):
-        self.logger.error('Calibrate Shade function is not available on Generation 3+ gateway.')
+        indigo.server.log('Calibrate Shade function is not available on Generation 3+ gateway.')
 
     def jogShade(self, hubHostname, shadeId):
         shadeUrl = self.URL_SHADES_MOTION_.format(h=hubHostname, id=shadeId)
         body = {
             "motion": "jog"
         }
-        self.__PUT(shadeUrl, data=body)
+        self.put(shadeUrl, data=body)
 
     def stopShade(self, hubHostname, shadeId):
         shadeUrl = self.URL_SHADES_STOP_.format(h=hubHostname, id=shadeId)
-        self.__PUT(shadeUrl)
+        self.put(shadeUrl)
 
     def room(self, hubHostname, roomId) -> dict:
         roomUrl = self.URL_ROOM_.format(h=hubHostname, id=roomId)
 
-        data = self.__GET(roomUrl)
+        data = self.get(roomUrl)
 
         data['name'] = base64.b64decode(data.pop('name')).decode()
 
         return data
 
-    def setShadePosition(self, hubHostname, shadeId, positions):
+    def setShadePosition(self, hubHostname, shadeId, pos):
+        # convert 0-100 values to 0-1.
+        primary = float(pos.get('primary', '0')) / 100.0
+        secondary = float(pos.get('secondary', '0')) / 100.0
+        tilt = float(pos.get('tilt', '0')) / 100.0
+        velocity = float(pos.get('velocity', '0')) / 100.0
+        positions = {"primary": primary, "secondary": secondary, "tilt": tilt, "velocity": velocity}
+
         shadeUrl = self.URL_SHADES_POSITIONS_.format(h=hubHostname, id=shadeId)
         pos = {'positions': positions}
 
-        self.__PUT(shadeUrl, pos)
+        self.put(shadeUrl, pos)
 
     def scenes(self, hubHostname):
         scenesURL = self.URL_SCENES_.format(h=hubHostname, id='')
 
-        data = self.__GET(scenesURL)
+        data = self.get(scenesURL)
 
         for scene in data:
             name = base64.b64decode(scene.pop('name')).decode()
@@ -128,24 +141,32 @@ class PowerViewGen3:
         return data
 
     def sceneCollections(self, hubHostname):
-        self.logger.error('Scene Collections are not available on Generation 3+ gateway. Use a Multi-Room Scene instead.')
+        indigo.server.log('Scene Collections are not available on Generation 3+ gateway. Use a Multi-Room Scene instead.')
         return []
 
     def shade(self, hubHostname, shadeId, room=False) -> dict:
         shadeUrl = self.URL_SHADES_.format(h=hubHostname, id=shadeId)
 
-        data = self.__GET(shadeUrl)
-        data['shadeId'] = data.pop('id')
+        data = self.get(shadeUrl)
+        if data:
+            data['shadeId'] = data.pop('id')
 
-        data['name'] = base64.b64decode(data.pop('name')).decode()
-        data['generation'] = 3
-        if room and 'roomId' in data:
-            room_data = self.room(hubHostname, data['roomId'])
-            data['room'] = room_data['name']
-        if 'batteryStrength' in data:
-            data['batteryLevel'] = data.pop('batteryStrength')
-        else:
-            data['batteryLevel'] = 'unk'
+            data['name'] = base64.b64decode(data.pop('name')).decode()
+            data['generation'] = 3
+            if room and 'roomId' in data:
+                room_data = self.room(hubHostname, data['roomId'])
+                data['room'] = room_data['name']
+            if 'batteryStrength' in data:
+                data['batteryLevel'] = data.pop('batteryStrength')
+            else:
+                data['batteryLevel'] = 'unk'
+
+            if 'position' in data:
+                # Convert positions to integer percentages
+                data['position']['primary'] = self.to_percent(data['position']['primary'])
+                data['position']['secondary'] = self.to_percent(data['position']['secondary'])
+                data['position']['tilt'] = self.to_percent(data['position']['tilt'])
+                data['position']['velocity'] = self.to_percent(data['position']['velocity'])
 
         self.logger.debug("shade V3: Return data={}".format(data))
         return data
@@ -153,48 +174,55 @@ class PowerViewGen3:
     def shadeIds(self, hubHostname) -> list:
         shadesUrl = self.URL_SHADES_.format(h=hubHostname, id='')
 
-        data = self.__GET(shadesUrl)
+        data = self.get(shadesUrl)
         shadeIds = []
         for shade in data:
             shadeIds.append(shade['id'])
 
         return shadeIds
 
-    def __GET(self, url) -> dict:
+    @staticmethod
+    def to_percent(pos, divr=1.0):
+        return math.trunc((float(pos) / divr * 100.0) + 0.5)
+
+    def do_get(self, url, *param, **kwargs):
+        '''This method exists to make it easier to test the plugin.'''
+        return requests.get(url, *param, **kwargs)
+
+    def get(self, url) -> dict:
         try:
-            f = requests.get(url, headers={'accept': 'application/json'})
-        except requests.exceptions.RequestException:
-            self.logger.exception("Error in get {}:".format(url))
+            res = self.do_get(url, headers={'accept': 'application/json'})
+        except requests.exceptions.RequestException as e:
+            self.logger.exception(f"Error fetching {url}", exc_info=True)
+            self.logger.debug(
+                f"    Get from '{url}' returned {'n/a' if not res else res.status_code}, response body '{'n/a' if not res else res.text}'")
             return {}
 
-        self.logger.debug("    Get returned {} from '{}'".format(f.status_code, url))
-        self.logger.debug("    Get response body '{}'".format(f.json()))
-        if f.status_code != requests.codes.ok:
-            self.logger.error("Unexpected response fetching {}: {}".format(url, str(f.status_code)))
+        if res.status_code != requests.codes.ok:
+            self.logger.error(f"Unexpected response fetching {url}: {res.status_code}")
+            self.logger.debug(f"    Get from '{url}' returned {res.status_code}, response body '{res.text}'")
             return {}
 
-        response = f.json()
-
+        response = res.json()
         return response
 
-    def __PUT(self, url, data=None) -> dict:
-
+    def put(self, url, data=None) -> dict:
         try:
             if data:
                 res = requests.put(url, json=data, headers={'accept': 'application/json'})
             else:
                 res = requests.put(url, headers={'accept': 'application/json'})
 
-        except requests.exceptions.RequestException:
-            self.logger.exception("Error in put {} with data {}:".format(url, data))
+        except requests.exceptions.RequestException as e:
+            self.logger.exception(f"Error in put {url} with data {data}:", exc_info=True)
+            self.logger.debug(
+                f"    Get from '{url}' returned {'n/a' if not res else res.status_code}, response body '{'n/a' if not res else res.text}'")
             return {}
 
-        self.logger.debug("    Put to '{}' with body {}".format(url, data))
-        self.logger.debug("    Put returned {}, response body '{}'".format(res.status_code, res.json()))
         if res.status_code != requests.codes.ok:
-            self.logger.error("Unexpected response in put {}: {}".format(url, str(res.status_code)))
+            self.logger.error('Unexpected response in put %s: %s' % (url, str(res.status_code)))
+            self.logger.debug(f"    Get from '{url}' returned {res.status_code}, response body '{res.text}'")
             return {}
 
         response = res.json()
-
         return response
