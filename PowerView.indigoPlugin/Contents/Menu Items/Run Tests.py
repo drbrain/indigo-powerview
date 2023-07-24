@@ -40,9 +40,6 @@ def run_tests(hub3, hub2):
     log_format = "%(asctime)s.%(msecs).0f)\t%(levelname)s \t%(funcName)s\t\t%(message)s"
     fh.setFormatter(logging.Formatter(fmt=log_format, datefmt='%y-%m-%d %H:%M:%S'))
     fh.setLevel(logging.DEBUG)
-    # # logging.getLogger('net.segment7').addHandler(fh)
-    logging.getLogger("Plugin").addHandler(fh)
-    logging.getLogger("net.segment7.powerview").addHandler(fh)
     logger = logging.getLogger("wsgmac.com.test.powerview")  # most of the logging during the tests go to a file
     logger.setLevel(logging.DEBUG)
     logger.addHandler(fh)
@@ -63,9 +60,7 @@ def run_tests(hub3, hub2):
 
     logger.debug("Run Tests: Tests Complete")
     logger.debug("==============================================================================\n\n\n")
-    logging.getLogger("Plugin").removeHandler(fh)
-    logging.getLogger("net.segment7.powerview").removeHandler(fh)
-    logger.removeHandler(fh)
+
     return passed, failed, errored, skipped
 
 

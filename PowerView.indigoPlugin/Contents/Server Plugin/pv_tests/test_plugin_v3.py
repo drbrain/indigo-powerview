@@ -1,5 +1,6 @@
 
 import logging
+from plugin import Plugin
 from powerview2 import PowerView
 from powerview3 import PowerViewGen3
 import pytest
@@ -22,8 +23,9 @@ def setup(monkeypatch):
     if not MockPowerView.hub_available("V3"):
         monkeypatch.setattr(PowerViewGen3, "do_get", MockPowerView.mock_do_get)
         monkeypatch.setattr(indigo, "devices", MockPowerView.DevicesMock())
-    monkeypatch.setattr(indigo.Device, "replacePluginPropsOnServer", MockPowerView.DevicesMock.MockedDevice.replacePluginPropsOnServer)
     monkeypatch.setattr(requests, "put", MockPowerView.mock_put)
+    monkeypatch.setattr(indigo.Device, "replacePluginPropsOnServer", MockPowerView.DevicesMock.MockedDevice.replacePluginPropsOnServer)
+    monkeypatch.setattr(Plugin, "create_shade_device", MockPowerView.DevicesMock.create)
 
 
 class TestPluginV3:
@@ -40,7 +42,7 @@ class TestPluginV3:
     def set_vals(self):
         self.hub_address = MockPowerView.hub_host3()
         if not self.pv:
-            self.pv = PowerViewGen3()
+            self.pv = PowerViewGen3({'logger': "wsgmac.com.test.powerview"})
             pb.gplg(self.pv, 'V3')
 
     def test_create_shade(self, setup):

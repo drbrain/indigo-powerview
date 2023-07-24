@@ -1,4 +1,3 @@
-
 import logging
 import mock_powerview
 import os
@@ -20,8 +19,8 @@ class ResultsCollector:
             print('exit code:', collector.exitcode)
             print('passed:', collector.passed, 'failed:', collector.failed, 'xfailed:', collector.xfailed, 'skipped:', collector.skipped)
             print('total duration:', collector.total_duration)
-
     """
+
     def __init__(self):
         self.reports = []
         self.collected = 0
@@ -81,7 +80,7 @@ def get_default_hubs():
 def run_tests(hub3, hub2) -> (int, int, int, int):
     logger = logging.getLogger("wsgmac.com.test.powerview")
     wd = os.getcwd()
-    logger.debug("pv_runner.run_tests: Starting to run all tests in pv_tests folder. wd={}".format(wd))
+    logger.debug(f"pv_runner.run_tests: Starting to run all tests in pv_tests folder. wd={wd}")
     set_default_hubs(hub3, hub2)
     logger.debug(f"pv_runner.run_tests: default_hubs={default_hubs}")
 
@@ -89,9 +88,6 @@ def run_tests(hub3, hub2) -> (int, int, int, int):
     ret_code = pytest.main(plugins=[collector], args=["-v", "-raE"])
 
     logger.debug('pv_runner.run_tests: Finished all tests in pv_tests folder. Results follow:')
-
-    # for report in collector.reports:
-    #     logger.debug("id: {} outcome: {}".format(report.nodeid, report.outcome))  # etc
     logger.debug('exit code: {}'.format(collector.exitcode))
     logger.debug('passed: {}, failed: {}, xfailed: {}, skipped: {}'
                  .format(collector.passed, collector.failed, collector.xfailed, collector.skipped))

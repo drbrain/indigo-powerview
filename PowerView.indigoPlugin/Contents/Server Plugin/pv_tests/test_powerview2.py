@@ -9,6 +9,7 @@ import requests
 logger = logging.getLogger("wsgmac.com.test.powerview")
 mp = MockPowerView()
 
+
 @pytest.fixture()
 def tpv2(monkeypatch):
 
@@ -17,7 +18,7 @@ def tpv2(monkeypatch):
     if not MockPowerView.hub_available("V3"):
         monkeypatch.setattr(PowerViewGen3, "do_get", MockPowerView.mock_get)
     monkeypatch.setattr(requests, "put", MockPowerView.mock_put)
-    tpv2 = PowerView()
+    tpv2 = PowerView({'logger': "wsgmac.com.test.powerview"})
     return tpv2
 
 

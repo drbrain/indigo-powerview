@@ -17,7 +17,7 @@ def tpv3(monkeypatch):
     if not MockPowerView.hub_available("V3"):
         monkeypatch.setattr(PowerViewGen3, "do_get", MockPowerView.mock_get)
     monkeypatch.setattr(requests, "put", MockPowerView.mock_put)
-    tpv3 = PowerViewGen3()
+    tpv3 = PowerViewGen3({'logger': "wsgmac.com.test.powerview", 'debugPref': True})
     return tpv3
 
 

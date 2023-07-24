@@ -1,5 +1,6 @@
 
 import logging
+from plugin import Plugin
 from powerview2 import PowerView
 from powerview3 import PowerViewGen3
 import pytest
@@ -25,11 +26,10 @@ def setup(monkeypatch):
         monkeypatch.setattr(indigo, "devices", MockPowerView.DevicesMock())
     monkeypatch.setattr(requests, "put", MockPowerView.mock_put)
     monkeypatch.setattr(indigo.Device, "replacePluginPropsOnServer", MockPowerView.DevicesMock.MockedDevice.replacePluginPropsOnServer)
+    monkeypatch.setattr(Plugin, "create_shade_device", MockPowerView.DevicesMock.create)
 
 
 class TestPluginV2:
-    hub_address = ''
-    pv = None
 
     COMPARE_DATA = {
         'CALIBRATE': {'url': 'http://{hub_address}/api/shades/{id}', 'compare_put_send': {'shade': {'motion': 'calibrate'}}},
@@ -37,12 +37,13 @@ class TestPluginV2:
         'SET_POSITION': {'url': 'http://{hub_address}/api/shades/{id}',
                          'compare_put_send': {'shade': {'positions': {'position1': 6554, 'posKind1': 1,'position2': 13107, 'posKind2': 2}}}}
     }
+    pv = None
 
     @pytest.fixture(scope="function", autouse=True)
     def set_vals(self):
         self.hub_address = MockPowerView.hub_host2()
         if not self.pv:
-            self.pv = PowerView()
+            self.pv = PowerView({'logger': "wsgmac.com.test.powerview"})
             pb.gplg(self.pv, 'V2')
 
     def test_create_shade(self, setup):

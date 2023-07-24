@@ -13,9 +13,9 @@ except ImportError:
 class PowerView:
     GENERATION = "V2"
 
-    def __init__(self) -> None:
+    def __init__(self, prefs):
         super().__init__()
-        self.logger = logging.getLogger("net.segment7.powerview")
+        self.logger = logging.getLogger(prefs.get('logger', "net.segment7.powerview"))
 
     def activateScene(self, hubHostname, sceneId):
         activateSceneUrl = 'http://%s/api/scenes?sceneId=%s' % (hubHostname, sceneId)
@@ -181,7 +181,7 @@ class PowerView:
                 f"    Get from '{url}' returned {'n/a' if not res else res.status_code}, response body '{'n/a' if not res else res.text}'")
             return {}
 
-        if res.status_code != requests.codes.ok:
+        if res and res.status_code != requests.codes.ok:
             self.logger.error(f"Unexpected response fetching {url}: {res.status_code}")
             self.logger.debug(f"    Get from '{url}' returned {res.status_code}, response body '{res.text}'")
             return {}
@@ -202,7 +202,7 @@ class PowerView:
                 f"    Get from '{url}' returned {'n/a' if not res else res.status_code}, response body '{'n/a' if not res else res.text}'")
             return {}
 
-        if res.status_code != requests.codes.ok:
+        if res and res.status_code != requests.codes.ok:
             self.logger.error('Unexpected response in put %s: %s' % (url, str(res.status_code)))
             self.logger.debug(f"    Get from '{url}' returned {res.status_code}, response body '{res.text}'")
             return {}

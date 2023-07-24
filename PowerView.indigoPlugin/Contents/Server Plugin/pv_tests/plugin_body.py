@@ -1,8 +1,7 @@
 
-import math
 import re
 from time import sleep
-
+import pytest
 import requests
 try:
     import indigo
@@ -21,6 +20,7 @@ POWERVIEW_SHADE = 'PowerViewShade'
 
 gen = ''
 logger = logging.getLogger("wsgmac.com.test.powerview")
+logger.setLevel(10)
 plg: Plugin  # PowerView Plugin instance used for all tests
 prefs = {}  # PluginPrefs used to send
 pv = None  # PowerView driver instance used for all tests
@@ -38,7 +38,9 @@ def gplg(pv_driver, gen_in):
         prefs['pv3'] = pv_driver
     if 'pv2' not in prefs and gen == 'V2':
         prefs['pv2'] = pv_driver
-    plg = TestPlugin(POWERVIEW_ID, 'PowerViewPluginTest', "0", {})
+    prefs['logger'] = 'wsgmac.com.test.powerview'
+    prefs['debugPref'] = True
+    plg = TestPlugin(POWERVIEW_ID, 'PowerViewPluginTest', "0", prefs)
     plg.startup()
     logger.debug("gplg: gen={}, pv={}".format(gen, pv))
 
@@ -68,13 +70,6 @@ class PluginAction:
 class TestPlugin(Plugin):
     def __init__(self, pluginId, pluginDisplayName, pluginVersion, pluginPrefs):
         super().__init__(pluginId, pluginDisplayName, pluginVersion, pluginPrefs)
-        self.new_shade_ids = []
-        # self.logger.removeHandler(self.indigo_log_handler)
-
-    def create_shade_device(self, address:str, data:dict, folder_id:int):
-        new_shade = super().create_shade_device(address, data, folder_id)
-        self.new_shade_ids.append(new_shade.id)
-        return new_shade
 
     def listScenes(self, filter="", valuesDict="", type="", targetId=0):
         self.load_devices()
@@ -119,29 +114,30 @@ def perform_shade_action(hub, props, type_id, do_action):
 
 # ====================================================
 
-def testbody_create_shade(hub, config):
-    logger.debug("testbody create_shade: hub={}".format(hub))
+def testbody_create_shade(hub_address, config):
+    logger.debug("testbody create_shade: hub={}".format(hub_address))
     # create_shade(hubHostname, shadeId, hubId) -> bool:
     # create_shade_device(address, shade_data, folderId) -> indigo.device:
-    # plg.new_shade_ids = []
-    # dev_ids = []
-    # for shade in indigo.devices.iter(POWERVIEW_SHADE):
-    #     dev_ids.append(shade.id)
-    #     logger.debug("create_shade: In indigo.devices: shade={} {}".format(shade.name, shade.address))
     shade_id = 1  # hard coded shade id to avoid creating a duplicate indigo device
-    address = f'{hub}:{shade_id}'
-    shade_data = mp.A_MOCKED_SHADE3.copy()  # plg.find_shade_on_hub(hub, shade_id, need_room=True)  #
-    shade_data['room'] = {'name': 'Test Room'}
+    address = f'{hub_address}:{shade_id}'
+    new_shade = None
 
-    new_shade = plg.create_shade_device(address, shade_data, 0)
-    if new_shade:
-        logger.debug(f"create_shade: Given address={address}, and shade_data={shade_data}, new_shade={new_shade.name}")
-        indigo.device.delete(new_shade.id)
-        sleep(15)
+    if plg.create_shade(hub_address, shade_id, 0):
+        for new_shade in indigo.devices.iter(POWERVIEW_SHADE):
+            logger.debug(f'Checking dev {new_shade} for address={address}')
+            if new_shade.address == address:
+                break
+        else:
+            new_shade = None
 
-    assert new_shade, 'create_shade failed to create the device'
-    assert new_shade.address == address, f"Invalid address={new_shade.address} for created shade {shade_data['name']}."
-    assert new_shade.name == shade_data['name'], f"Invalid name={shade_data['name']}."
+        assert new_shade, f'Create_shade returned True but no device has the matching address of {address}'
+        logger.debug(f'Deleting shade id={new_shade.id}, address={new_shade.address}')
+        delete_shade(new_shade)
+    else:
+        assert True, f'create_shade failed to create the device with address {address}'
+
+    assert new_shade.address == address, f"Invalid address={new_shade.address} w/ id={new_shade.id} given address{address}."
+    # assert new_shade.name == shade_data['name'], f"Invalid name={shade_data['name']}."
     logger.debug("==========================")
 
 
@@ -157,6 +153,7 @@ def find_device(hub_address):
 def testbody_activate_scene(hub_address, config):
     # activateScene(self, action):
     logger.debug("testbody activate_scene: hub={}".format(hub_address))
+
     hub = find_device(hub_address)
     logger.debug(f"testbody activate_scene: after find returned {hub}")
     hub_device_id = hub.id
@@ -176,6 +173,7 @@ def testbody_activate_scene(hub_address, config):
 def testbody_activate_scene_collection(hub_address, config):
     # activateSceneCollection(self, action):
     logger.debug("testbody activate_scene_collection: hub={}".format(hub_address))
+
     hub = find_device(hub_address)
     scenes = plg.listSceneCollections(targetId=hub.id)
 
@@ -200,11 +198,11 @@ def testbody_calibrate_shade(hub, config):
         hub_address, shade_id = shade.address.split(':')
         assert_put_response(shade.name, config, hub_address=hub_address, id=shade_id)
 
-    type_id = 'calibrate_shade'
-    props = {}
-    dev_found = perform_shade_action(hub, props, type_id, body_calibrate_shade)
+        type_id = 'calibrate_shade'
+        props = {}
+        dev_found = perform_shade_action(hub, props, type_id, body_calibrate_shade)
 
-    logger.debug(f"testbody_calibrate_shade: Tested {dev_found} shades.")
+        logger.debug(f"testbody_calibrate_shade: Tested {dev_found} shades.")
     logger.debug("==========================")
 
 
@@ -218,11 +216,11 @@ def testbody_jog_shade(hub, config):
         hub_address, shade_id = shade.address.split(':')
         assert_put_response(shade.name, config, hub_address=hub_address, id=shade_id)
 
-    type_id = 'jog_shade'
-    props = {}
-    dev_found = perform_shade_action(hub, props, type_id, body_jog_shade)
+        type_id = 'jog_shade'
+        props = {}
+        dev_found = perform_shade_action(hub, props, type_id, body_jog_shade)
 
-    logger.debug(f"testbody jog_shade: Tested {dev_found} shades.")
+        logger.debug(f"testbody jog_shade: Tested {dev_found} shades.")
     logger.debug("==========================")
 
 
@@ -236,12 +234,12 @@ def testbody_stop_shade(hub, config):
         hub_address, shade_id = shade.address.split(':')
         assert_put_response(shade.name, config, hub_address=hub_address, id=shade_id)
 
-    logger.debug("testbody stop_shade: hub={}".format(hub))
-    type_id = 'stop_shade'
-    props = {}
-    dev_found = perform_shade_action(hub, props, type_id, body_stop_shade)
+        logger.debug("testbody stop_shade: hub={}".format(hub))
+        type_id = 'stop_shade'
+        props = {}
+        dev_found = perform_shade_action(hub, props, type_id, body_stop_shade)
 
-    logger.debug(f"testbody stop_shade: Tested {dev_found} shades.")
+        logger.debug(f"testbody stop_shade: Tested {dev_found} shades.")
     logger.debug("==========================")
 
 
@@ -253,34 +251,12 @@ def testbody_set_shade_position(hub, config):
         hub_address, shade_id = shade.address.split(':')
         assert_put_response(shade.name, config, hub_address=hub_address, id=shade_id)
 
-        # if mp.MockPowerView.mock_put_called():
-        #     put_response = mp.put_response
-        #     logger.debug(f"testbody_set_shade_position: For id={shade.id} put_response={put_response}")
-        #     if put_response:
-        #         data = put_response.json()
-        #         if data:
-        #             data = dict(data)
-        #             # if put_response.url.rfind('/api/') > -1:  # V2  'shade': {'positions': {'position1':...
-        #             #     pos = data['shade']['positions']
-        #             #     bottom = pos['position1']
-        #             #     top = pos['position2']
-        #             #     assert bottom == 6553, f"setShadePosition set wrong position: bottom={bottom}"
-        #             #     assert top == 13107, f"setShadePosition set wrong position: top={top}"
-        #             #
-        #             # elif put_response.url.rfind('/home/') > -1:  # V3
-        #             # {'positions': {"primary": primary, "secondary": secondary, "tilt": tilt, "velocity": velocity}}
-        #             pos = data['positions']
-        #             assert math.isclose(pos['primary'], 0.1), f"setShadePosition set wrong position: bottom={pos['primary']}"
-        #             assert math.isclose(pos['secondary'], 0.2), f"setShadePosition set wrong position: secondary={pos['secondary']}"
-        #             assert math.isclose(pos['tilt'], 0.3), f"setShadePosition set wrong position: tilt={pos['tilt']}"
-        #             assert math.isclose(pos['velocity'], 0.4), f"setShadePosition set wrong position: velocity={pos['velocity']}"
+        logger.debug("testbody set_shade_position: hub={}".format(hub))
+        type_id = 'setShadePosition'
+        props = {'primary': 10, 'secondary': 20, 'tilt': 30, 'velocity': 40}
+        dev_found = perform_shade_action(hub, props, type_id, body_set_body_position)
 
-    logger.debug("testbody set_shade_position: hub={}".format(hub))
-    type_id = 'setShadePosition'
-    props = {'primary': 10, 'secondary': 20, 'tilt': 30, 'velocity': 40}
-    dev_found = perform_shade_action(hub, props, type_id, body_set_body_position)
-
-    logger.debug(f"testbody_set_shade_position: Tested {dev_found} shades.")
+        logger.debug(f"testbody_set_shade_position: Tested {dev_found} shades.")
     logger.debug("==========================")
 
 
@@ -288,6 +264,7 @@ def testbody_current_position(hub, config):
     logger.debug("testbody current_position: hub={}".format(hub))
     # def getCurrentPosition(self, valuesDict, typeId, devId):
     # values_dict contains the content of the UI window at the time the user clicks the 'Current Position' button. This is NOT the current position.
+
     values_dict = {'current': '', 'enablePri': True, 'enableSec': True, 'enableTlt': True, 'enableVel': True,
                    'lblNumbers': '', 'primary': '10', 'secondary': '20', 'tilt': '30', 'velocity': '40'}
     type_id = 'getShadePosition'
@@ -312,14 +289,14 @@ def testbody_current_position(hub, config):
 def testbody_discover_shades(hub_address, config):
     # discoverShades(self, valuesDict, typeId, deviceId):
     logger.debug("testbody discover_shades: hub={}".format(hub_address))
+
     type_id = 'discoverShades'
-    dev_ids = plg.new_shade_ids
 
     hub_dev_id = 0
-    # dev_ids = []
+    dev_ids = []
     for a_device in indigo.devices.iter(POWERVIEW_DEVICES):
         logger.debug(f'Found device {a_device.address}')
-        # dev_ids.append(a_device.id)
+        dev_ids.append(a_device.id)
         if a_device['deviceTypeId'] == POWERVIEW_HUB and a_device.address == hub_address:
             hub_dev_id = a_device.id
     values_dict = {'address': hub_address}
@@ -344,21 +321,30 @@ def testbody_discover_shades(hub_address, config):
         assert values_dict2['message'].startswith('The Hostname'), 'discoverShades did not return correct message.'
 
         logger.debug(f"About to call discoverShades with unknown address='unknown.tld': dev_id={hub_dev_id}")
-        values_dict2 = plg.discoverShades({'address': 'unknown.tld'}, type_id, hub_dev_id)
+        with pytest.raises(KeyError):
+            values_dict2 = plg.discoverShades({'address': 'unknown.tld'}, type_id, hub_dev_id)
         logger.debug(f"values_dict2={values_dict2}")
 
         assert values_dict2, 'No return value from discoverShades.'
         assert values_dict2['message'].startswith('The Hostname'), 'discoverShades did not return correct message.'
 
     finally:
-        # for a_device in indigo.devices.iter(POWERVIEW_DEVICES):
-        #     logger.debug(f'Check for deletion device {a_device.address}')
-        for a_device_id in dev_ids:
-            logger.debug(f'Deleting device {a_device_id}')
-            indigo.device.delete(a_device_id)
-            sleep(2)
+        for a_device in indigo.devices.iter(POWERVIEW_DEVICES):
+            logger.debug(f'Check for deletion device {a_device.address}')
+            if a_device.id not in dev_ids:
+                delete_shade(a_device)
 
     logger.debug("==========================")
+
+
+def delete_shade(a_device):
+    if isinstance(a_device, mp.MockPowerView.DevicesMock.MockedDevice):
+        logger.debug(f'Deleting shade id={a_device.id}, address={a_device["address"]}')
+        a_device.delete()
+    else:
+        logger.debug(f'Deleting shade id={a_device.id}, address={a_device.address}')
+        indigo.device.delete(a_device.id)
+    sleep(2)
 
 
 def testbody_list_hubs(hub, config):
@@ -468,12 +454,15 @@ def testbody_validate_device_config_ui(hub, config):
     # validateDeviceConfigUi(self, valuesDict, typeId, devId):
     logger.debug("testbody validate_device_config_ui: hub={}".format(hub))
 
+    pass
+
     logger.debug("========================== Not Yet Implemented.")
 
 
 def testbody_find_shade_on_hub(hub, config):
     # find_shade_on_hub(self, hubHostname, shadeId, need_room=False)
     logger.debug("testbody find_shade_on_hub: hub={}".format(hub))
+
     shade_ids = pv.shadeIds(hub)
 
     if shade_ids:

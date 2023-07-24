@@ -8,12 +8,9 @@ import requests
 # DEV_ID_V3 = 3  # Device ID of Mocked V3 shade
 LOCAL_IP_V2 = 'localhost'
 LOCAL_IP_V3 = '127.0.0.1'  # localhost
-
-host_ip2 = ''
-host_ip3 = ''
-logger = logging.getLogger("wsgmac.com.test.powerview")
-__mock_put_called = False
-put_response = None
+POWERVIEW_ID = 'net.segment7.powerview'
+POWERVIEW_HUB = 'PowerViewHub'
+POWERVIEW_SHADE = 'PowerViewShade'
 
 A_MOCKED_SHADE3 = {"id": 1,
                    "type": 5, "name": "RGF5dGltZSBTaGFkZXM=", "ptName": "Mock Bay Center", "motion": None, "capabilities": 0, "powerType": 0,
@@ -35,14 +32,27 @@ MOCKED_SHADES3 = [{"id": 1, "type": 5, "name": "RGF5dGltZSBTaGFkZXM=", "ptName":
                   {"id": 72, "type": 5, "name": "Tm9uLURldmljZSBTaGFkZSA3Mg==", "ptName": "Mock Bay  Left", "motion": None, "capabilities": 0,
                    "powerType": 0, "batteryStatus": 3, "roomId": 10, "firmware": {"revision": 3, "subRevision": 0, "build": 359}, "shadeGroupIds": [],
                    "positions": {"primary": 1, "secondary": 0, "tilt": 0, "velocity": 0}, "signalStrength": -62, "bleName": "R23:56E2"}]
-MOCKED_DEVICES = [{'id': 1, 'folderId': 0, 'address': 'V2:1', 'deviceTypeId': 'PowerViewShade', 'name': 'Shade 1', 'generation': 2},
-                  {'id': 10, 'folderId': 0, 'address': 'V2', 'deviceTypeId': 'PowerViewHub', 'name': 'V2 Hub 10', 'generation': 2},
-                  {'id': 20, 'folderId': 0, 'address': 'V3', 'deviceTypeId': 'PowerViewHub', 'name': 'V3 Hub 20', 'generation': 3},
-                  {'id': 201, 'folderId': 0, 'address': '201', 'deviceTypeId': 'SomeDev', 'name': 'A Device 201'},
-                  {'id': 2, 'folderId': 0, 'address': "V3:2", 'deviceTypeId': 'PowerViewShade', 'name': 'Shade 2', 'generation': 3},
-                  {'id': 202, 'folderId': 0, 'address': '202', 'deviceTypeId': 'SomeDev', 'name': 'A Device 202'},
-                  {'id': 203, 'folderId': 0, 'address': '203', 'deviceTypeId': 'SomeDev', 'name': 'A Device 203'},
-                  {'id': 3, 'folderId': 0, 'address': "V3:3", 'deviceTypeId': 'PowerViewShade', 'name': 'Shade 3', 'generation': 3}]
+MOCKED_DEVICES = [{'id': 10, 'folderId': 0, 'address': 'V2', 'deviceTypeId': POWERVIEW_HUB, 'name': 'V2 Hub 10', 'generation': 2,
+                   'pluginId': POWERVIEW_ID, 'states': {'stateField': 0, 'need_update': 0}},
+                  {'id': 20, 'folderId': 0, 'address': 'V3', 'deviceTypeId': POWERVIEW_HUB, 'name': 'V3 Hub 20', 'generation': 3,
+                   'pluginId': POWERVIEW_ID, 'states': {'stateField': 0, 'need_update': 0}},
+                  {'id': 201, 'folderId': 0, 'address': '201', 'deviceTypeId': 'SomeDev', 'name': 'A Device 201',
+                   'pluginId': 'SomeId', 'states': {}},
+                  {'id': 2, 'folderId': 0, 'address': "V2:2", 'deviceTypeId': POWERVIEW_SHADE, 'name': 'Shade 2', 'generation': 2,
+                   'pluginId': POWERVIEW_ID, 'states': {'stateField': 0, 'need_update': 0}},
+                  {'id': 202, 'folderId': 0, 'address': '202', 'deviceTypeId': 'SomeDev', 'name': 'A Device 202',
+                   'pluginId': 'SomeId', 'states': {}},
+                  {'id': 203, 'folderId': 0, 'address': '203', 'deviceTypeId': 'SomeDev', 'name': 'A Device 203',
+                   'pluginId': 'Some2ndId', 'states': {}},
+                  {'id': 3, 'folderId': 0, 'address': "V3:3", 'deviceTypeId': POWERVIEW_SHADE, 'name': 'Shade 3', 'generation': 3,
+                   'pluginId': POWERVIEW_ID, 'states': {'stateField': 0, 'need_update': 0}}]
+
+current_devices = MOCKED_DEVICES.copy()
+host_ip2 = ''
+host_ip3 = ''
+logger = logging.getLogger("wsgmac.com.test.powerview")
+__mock_put_called = False
+put_response = None
 
 
 class MockPowerView:
@@ -84,17 +94,16 @@ class MockPowerView:
 
         def __getitem__(self, param=None):
             if param:
-                for item in MOCKED_DEVICES:
+                for item in current_devices:
                     if param == item['id']:
                         # logger.debug(f"devices[{param}]: Returning device={item}")
                         return self.MockedDevice(item)
-                # logger.debug(f"No id={param} in last_item={MOCKED_DEVICES}")
             raise KeyError
 
         class MockedDevice:
             def __init__(self, data):
                 self.device_data = data
-                self.deviceTypeId = data.get('deviceTypeId', 'PowerViewShade')
+                self.deviceTypeId = data.get('deviceTypeId', POWERVIEW_SHADE)
                 self.pluginProps = {}
 
             def __getitem__(self, key=None):
@@ -141,6 +150,9 @@ class MockPowerView:
             def updateStateOnServer(self, key=None, value=None):
                 pass
 
+            def replaceOnServer(self):
+                pass
+
             @property
             def states(self):
                 if self.device_data:
@@ -153,6 +165,13 @@ class MockPowerView:
                         return {"generation": 3}
                 raise KeyError('states')
 
+            def delete(self):
+                indx = -1
+                for item in current_devices:
+                    indx += 1
+                    if item['id'] == self.id:
+                        current_devices.pop(indx)
+
         @property
         def id(self):
             # logger.debug("id: ")
@@ -160,11 +179,36 @@ class MockPowerView:
                 return self.last_item['id']
             raise KeyError('id')
 
+        @staticmethod
+        def create(self, address, data, folder_id):
+            # create_shade_device(self, address, data, folder_id) -> shade_device:
+            if not data:
+                data = A_MOCKED_SHADE3.copy()
+            data['address'] = address
+            data['folderId'] = folder_id
+            data['deviceTypeId'] = POWERVIEW_SHADE
+            data['pluginId'] = POWERVIEW_ID
+            data['description'] = f"Shade {address}"
+            data['states'] = {'stateField': 0, 'need_update': 0}  # default stateField to 0 for primary position as visible state
+            ids = []
+            for item in current_devices:
+                ids.append(item['id'])
+
+            for an_id in range(1, 25):
+                if an_id not in ids:
+                    break
+            data['id'] = an_id
+
+            current_devices.append(data)
+            new_device = MockPowerView.DevicesMock.MockedDevice(data)
+            logger.debug(f'Created MockedDevice: new dev {new_device} ids={ids}')
+            return new_device
+
         def iter(self, it_filter=None):
             # logger.debug("DeviceMock.iter: self={}, filter={}".format(self, it_filter))
             self.last_item = []
             item_list = []
-            for item in MOCKED_DEVICES:
+            for item in current_devices:
                 if item['address']:
                     if item['address'].find(':') > -1:
                         ip, node = item['address'].split(':')
@@ -185,14 +229,14 @@ class MockPowerView:
 
             elif it_filter.endswith("Hub"):
                 for item in item_list:
-                    if item['deviceTypeId'] == 'PowerViewHub':
+                    if item['deviceTypeId'] == POWERVIEW_HUB:
                         self.last_item.append(self.MockedDevice(item))
                 # logger.debug("DeviceMock.iter: Hub last_item={}".format(str(self.last_item)))
                 return self.last_item
 
             elif it_filter.endswith("Shade"):
                 for item in item_list:
-                    if item['deviceTypeId'] == 'PowerViewShade':
+                    if item['deviceTypeId'] == POWERVIEW_SHADE:
                         self.last_item.append(self.MockedDevice(item))
                 # logger.debug("DeviceMock.iter: Shade last_item={}".format(str(self.last_item)))
                 return self.last_item
