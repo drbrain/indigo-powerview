@@ -1,34 +1,144 @@
 <?xml version="1.0"?>
 <Devices>
-  <Device type="custom" id="PowerViewHub">
-    <Name>PowerView Hub</Name>
-    <ConfigUI>
-      <Field type="label" id="title">
-        <Label>PowerView Hub Settings</Label>
-      </Field>
-      <Field type="textfield" id="address" defaultValue="192.0.2.1">
-        <Label>Hostname/IP:</Label>
-      </Field>
-      <Field type="button" id="discover">
-        <Title>Discover shades</Title>
-        <CallbackMethod>discoverShades</CallbackMethod>
-      </Field>
-    </ConfigUI>
-  </Device>
-  <Device type="custom" id="PowerViewShade">
-    <Name>PowerView Shade</Name>
-    <ConfigUI>
-      <Field type="label" id="title">
-        <Label>PowerView Shade Settings</Label>
-      </Field>
-      <Field type="textfield" id="heading">
-        <Label>Window heading:</Label>
-      </Field>
-      <Field type="label" id="headingTitle">
-        <Label>In degrees from true north and perpendicular to the where the shade is mounted.  Use this for auto-closing shades on sun direction.</Label>
-      </Field>
-    </ConfigUI>
-    <States>
+    <Device type="custom" id="PowerViewHub">
+        <Name>PowerView Hub</Name>
+        <ConfigUI>
+            <Field type="label" id="title">
+                <Label>PowerView Hub Settings</Label>
+            </Field>
+            <Field type="textfield" id="address" defaultValue="powerview-g3.local">
+                <Label>Hostname/IP:</Label>
+            </Field>
+            <Field type="button" id="discover">
+                <Title>Discover Shades</Title>
+                <CallbackMethod>discoverShades</CallbackMethod>
+            </Field>
+            <Field id="message" type="textfield" readonly="true"
+                   defaultValue="Creates a shade device for each new shade on the hub.">
+            </Field>
+        </ConfigUI>
+        <States>
+            <State id="generation" readonly="true">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Generation</TriggerLabel>
+                <ControlPageLabel>Generation</ControlPageLabel>
+            </State>
+        </States>
+    </Device>
+    <Device type="custom" id="PowerViewShade">
+        <Name>PowerView Shade</Name>
+        <ConfigUI>
+            <SupportURL>https://github.com/drbrain/indigo-powerview</SupportURL>
+            <Field type="textfield" id="heading">
+                <Label>Window heading:</Label>
+            </Field>
+            <Field type="label" id="headingTitle">
+                <Label>In degrees from true north and perpendicular to the where the shade is mounted. Use this for auto-closing shades on sun direction.
+                </Label>
+            </Field>
+            <Field id="stateField" type="menu" defaultValue="0">
+                <Label>Show in State column:</Label>
+                <List>
+                    <Option value="0">Primary</Option>
+                    <Option value="1">Primary and Secondary</Option>
+                    <Option value="2">Primary and Tilt</Option>
+                    <Option value="3">Tilt</Option>
+                    <Option value="4">Primary Secondary and Tilt</Option>
+                </List>
+            </Field>
+            <Field id="simpleSeparator1" type="separator"/>
+            <Field type="label" id="title">
+                <Label>Create PowerView Shade: Choose hub and a new shade on that hub. </Label>
+            </Field>
+            <Field id="hub" type="menu" defaultValue="0">
+                <Label>PowerView Hub:</Label>
+                <List class="self" method="listHubs"/>
+            </Field>
+            <Field id="shadeAddress" type="menu">
+                <Label>Room - Shade:</Label>
+                <List class="self" method="listShades" dynamicReload="true"/>
+            </Field>
+        </ConfigUI>
+        <States>
+            <State id="open" readonly="true">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Percentage Open</TriggerLabel>
+                <ControlPageLabel>Percentage Open</ControlPageLabel>
+            </State>
+            <State id="primary" readonly="true">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Primary</TriggerLabel>
+                <ControlPageLabel>Primary</ControlPageLabel>
+            </State>
+            <State id="secondary" readonly="true">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Secondary</TriggerLabel>
+                <ControlPageLabel>Secondary</ControlPageLabel>
+            </State>
+            <State id="tilt" readonly="true">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Tilt</TriggerLabel>
+                <ControlPageLabel>Tilt</ControlPageLabel>
+            </State>
+            <State id="velocity" readonly="true">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Velocity</TriggerLabel>
+                <ControlPageLabel>Velocity</ControlPageLabel>
+            </State>
+            <State id="shadeType">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Shade Type</TriggerLabel>
+                <TriggerLabelPrefix>Shade Type Changed to</TriggerLabelPrefix>
+                <ControlPageLabel>Shade Type</ControlPageLabel>
+                <ControlPageLabelPrefix>Shade Type is</ControlPageLabelPrefix>
+            </State>
+            <State id="capabilities">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Shade Type ID</TriggerLabel>
+                <TriggerLabelPrefix>Shade Type Changed to</TriggerLabelPrefix>
+                <ControlPageLabel>Shade Type</ControlPageLabel>
+                <ControlPageLabelPrefix>Shade Type is</ControlPageLabelPrefix>
+            </State>
+            <State id="groupId" readonly="true">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Group ID</TriggerLabel>
+                <ControlPageLabel>Group ID</ControlPageLabel>
+            </State>
+            <State id="roomId" readonly="true">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Room ID</TriggerLabel>
+                <ControlPageLabel>Room ID</ControlPageLabel>
+            </State>
+            <State id="type" readonly="true">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Type</TriggerLabel>
+                <ControlPageLabel>Type</ControlPageLabel>
+            </State>
+            <State id="order" readonly="true">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Order</TriggerLabel>
+                <ControlPageLabel>Order</ControlPageLabel>
+            </State>
+            <State id="batteryLevel" readonly="true">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Battery Level</TriggerLabel>
+                <ControlPageLabel>Battery Level</ControlPageLabel>
+            </State>
+            <State id="batteryStatus" readonly="true">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Battery Status</TriggerLabel>
+                <ControlPageLabel>Battery Status</ControlPageLabel>
+            </State>
+            <State id="heading" readonly="false">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Window Heading</TriggerLabel>
+                <ControlPageLabel>Window Heading</ControlPageLabel>
+            </State>
+            <State id="generation" readonly="true">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Generation</TriggerLabel>
+                <ControlPageLabel>Generation</ControlPageLabel>
+            </State>
       <State id="position1">
         <ValueType>Number</ValueType>
         <TriggerLabel>Position 1</TriggerLabel>
@@ -53,36 +163,6 @@
         <TriggerLabel>Position Kind 2</TriggerLabel>
         <ControlPageLabel>Position Kind 2</ControlPageLabel>
       </State>
-      <State id="groupId" readonly="true">
-        <ValueType>Number</ValueType>
-        <TriggerLabel>Group Id</TriggerLabel>
-        <ControlPageLabel>Group ID</ControlPageLabel>
-      </State>
-      <State id="roomId" readonly="true">
-        <ValueType>Number</ValueType>
-        <TriggerLabel>Room ID</TriggerLabel>
-        <ControlPageLabel>Room ID</ControlPageLabel>
-      </State>
-      <State id="type" readonly="true">
-        <ValueType>Number</ValueType>
-        <TriggerLabel>Type</TriggerLabel>
-        <ControlPageLabel>Type</ControlPageLabel>
-      </State>
-      <State id="order" readonly="true">
-        <ValueType>Number</ValueType>
-        <TriggerLabel>Order</TriggerLabel>
-        <ControlPageLabel>Order</ControlPageLabel>
-      </State>
-      <State id="batteryLevel" readonly="true">
-        <ValueType>Number</ValueType>
-        <TriggerLabel>Battery Level</TriggerLabel>
-        <ControlPageLabel>Battery Level</ControlPageLabel>
-      </State>
-      <State id="batteryStatus" readonly="true">
-        <ValueType>Number</ValueType>
-        <TriggerLabel>Battery Status</TriggerLabel>
-        <ControlPageLabel>Battery Status</ControlPageLabel>
-      </State>
-    </States>
-  </Device>
+        </States>
+    </Device>
 </Devices>

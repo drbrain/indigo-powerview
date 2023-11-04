@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <PluginConfig>
-  <SupportURL>https://github.com/drbrain/indigo-powerview/</SupportURL>
-  <Field type="checkbox" id="debug">
-    <Label>Enable debug logs:</Label>
-  </Field>
+    <SupportURL>https://github.com/sdf-cnicorp/indigo-powerview/</SupportURL>
+    <Field type="checkbox" id="debugPref" defaultValue="False">
+        <Label>Debug Info in Logs:</Label>
+    </Field>
 </PluginConfig>
