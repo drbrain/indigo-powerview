@@ -31,7 +31,9 @@ def setup(monkeypatch):
 class TestPluginV3:
     COMPARE_DATA = {
         'ACTIVATE-S': {'url': 'http://{hub_address}/home/scenes/{id}/activate', 'compare_put_send': {}},
-        'JOG': {'url': 'http://{hub_address}/home/shades/{id}/motion', 'compare_put_send': {"motion": "jog"}},
+        'ACTIVATE-C': {}, # Not supported on Gen3
+        'CALIBRATE': {}, # Not supported on Gen3
+        'JOG': {'url': 'http://{hub_address}/home/shades/{id}/motion', 'compare_put_send': {'motion': 'jog'}},
         'STOP': {'url': 'http://{hub_address}/home/shades/stop?ids={id}', 'compare_put_send': {}},
         'SET_POSITION': {'url': 'http://{hub_address}/home/shades/positions?ids={id}',
                          'compare_put_send': {'positions': {'primary': 0.10, 'secondary': 0.20, 'tilt': 0.30, 'velocity': 0.40}}}
@@ -42,7 +44,7 @@ class TestPluginV3:
     def set_vals(self):
         self.hub_address = MockPowerView.hub_host3()
         if not self.pv:
-            self.pv = PowerViewGen3({'logger': "wsgmac.com.test.powerview"})
+            self.pv = PowerViewGen3({'logger': logger})
             pb.gplg(self.pv, 'V3')
 
     def test_create_shade(self, setup):
@@ -52,10 +54,10 @@ class TestPluginV3:
         pb.testbody_activate_scene(self.hub_address, self.COMPARE_DATA['ACTIVATE-S'])
 
     def test_activate_scene_collection(self, setup):
-        pb.testbody_activate_scene_collection(self.hub_address, self.COMPARE_DATA)
+        pb.testbody_activate_scene_collection(self.hub_address, self.COMPARE_DATA['ACTIVATE-C'])
 
     def test_calibrate_shade(self, setup):
-        pb.testbody_calibrate_shade(self.hub_address, self.COMPARE_DATA)
+        pb.testbody_calibrate_shade(self.hub_address, self.COMPARE_DATA['CALIBRATE'])
 
     def test_jog_shade(self, setup):
         pb.testbody_jog_shade(self.hub_address, self.COMPARE_DATA['JOG'])
@@ -64,7 +66,7 @@ class TestPluginV3:
         pb.testbody_stop_shade(self.hub_address, self.COMPARE_DATA['STOP'])
 
     def test_set_shade_position(self, setup):
-        pb.testbody_set_shade_position(self.hub_address, self.COMPARE_DATA)
+        pb.testbody_set_shade_position(self.hub_address, self.COMPARE_DATA['SET_POSITION'], gen2=False)
 
     def test_current_position(self, setup):
         pb.testbody_current_position(self.hub_address, self.COMPARE_DATA)

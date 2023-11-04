@@ -17,7 +17,7 @@ def tpv3(monkeypatch):
     if not MockPowerView.hub_available("V3"):
         monkeypatch.setattr(PowerViewGen3, "do_get", MockPowerView.mock_get)
     monkeypatch.setattr(requests, "put", MockPowerView.mock_put)
-    tpv3 = PowerViewGen3({'logger': "wsgmac.com.test.powerview", 'debugPref': True})
+    tpv3 = PowerViewGen3({'logger': logger, 'debugPref': True})
     return tpv3
 
 
@@ -43,9 +43,15 @@ def test_shade(tpv3: PowerViewGen3) -> None:
         result = tpv3.shade(MockPowerView.hub_host3(), shadeId)
 
         if result:
-            assert isinstance(result, dict)
-            assert result['name']
-            assert isinstance(result['type'], int)
+            assert isinstance(result, dict), "Bad result from method shade()"
+            assert result['name'], "Bad result from method shade()"
+            assert isinstance(result['type'], int), "Bad result from PowerViewGen3.shade"
+            assert result['positions'], f"Position data missing from shade {result['name']}"
+            assert result['positions']['primary'] in range(101), f"Invalid primary position = {result['positions']['primary']}"
+            assert result['positions']['secondary'] in range(101), f"Invalid secondary position = {result['positions']['secondary']}"
+            assert result['positions']['tilt'] in range(101), f"Invalid tilt position = {result['positions']['tilt']}"
+            assert result['positions']['velocity'] in range(101), f"Invalid velocity position = {result['positions']['velocity']}"
+            assert result['capabilities'] in range(12)
     logger.debug("==========================")
 
 
@@ -114,3 +120,17 @@ def test_set_shade_position(tpv3: PowerViewGen3) -> None:
         tpv3.setShadePosition(MockPowerView.hub_host3(), shadeId, {'primary': 0, 'secondary': 0, 'tilt': 0, 'velocity': 0})
         assert MockPowerView.mock_put_called
     logger.debug("==========================")
+
+
+def test_to_percent(tpv3: PowerViewGen3) -> None:
+    logger.debug("test_to_percent(tpv3: PowerViewGen3) -> None:")
+
+    # def test_to_percent(pos, divr=1.0):
+
+    assert 0 == tpv3.to_percent(0.0)
+    assert 1 == tpv3.to_percent(0.01)
+    assert 10 == tpv3.to_percent(0.1)
+    assert 50 == tpv3.to_percent(0.5)
+    assert 99 == tpv3.to_percent(0.99)
+    assert 100 == tpv3.to_percent(1.0)
+    assert 200 == tpv3.to_percent(2.0)

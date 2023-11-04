@@ -133,61 +133,66 @@ PowerView Gen 3, there are over 20 different types of Hunter Douglas Shades
 available. These Shade have a variety of different motion capabilities. While 
 each Shade has its own set of unique properties, all can be represented by the 
 following motion type capabilities:
- * Type 0 - Bottom Up.
- * * Examples: Standard roller/screen shades, Duette bottom up.
- * * Uses the “primary” control type.
+ - Type 0 - Bottom Up.
+	* Examples: Standard roller/screen shades, Duette bottom up.
+	* Uses the “primary” control type.
 
- * Type 1 - Bottom Up w/ 90° Tilt. 
- * * Examples: Silhouette, Pirouette.
- * * Uses the “primary” and “tilt” control types.
+ - Type 1 - Bottom Up w/ 90° Tilt. 
+	* Examples: Silhouette, Pirouette.
+	* Uses the “primary” and “tilt” control types.
 
- * Type 2 - Bottom Up w/ 180° Tilt.
- * * Example: Silhouette Halo.
- * * Uses the “primary” and “tilt” control types.
+ - Type 2 - Bottom Up w/ 180° Tilt.
+	* Example: Silhouette Halo.
+	* Uses the “primary” and “tilt” control types.
 
- * Type 3 - Vertical (Traversing).
- * * Examples: Skyline, Duette Vertiglide, Design Studio Drapery.
- * * Uses the “primary” control type.
+ - Type 3 - Vertical (Traversing).
+	* Examples: Skyline, Duette Vertiglide, Design Studio Drapery.
+	* Uses the “primary” control type.
 
- * Type 4 - Vertical (Traversing) w/ 180° Tilt.
- * * Example: Luminette.
- * * Uses the “primary” and “tilt” control types.
+ - Type 4 - Vertical (Traversing) w/ 180° Tilt.
+	* Example: Luminette.
+	* Uses the “primary” and “tilt” control types.
 
- * Type 5 - Tilt Only 180°.
- * * Examples: Palm Beach Shutters, Parkland Wood Blinds.
- * * Uses the “tilt” control type.
+ - Type 5 - Tilt Only 180°.
+	* Examples: Palm Beach Shutters, Parkland Wood Blinds.
+	* Uses the “tilt” control type.
 
- * Type 6 - Top Down.
- * * Example: Duette Top Down.
- * * Uses the “primary” control type.
+ - Type 6 - Top Down.
+	* Example: Duette Top Down.
+	* Uses the “primary” control type.
 
- * Type 7 - Top-Down/Bottom-Up (can open either from the bottom or from the top).
- * * Examples: Duette TDBU, Vignette TDBU.
- * * Uses the “primary” and “secondary” control types.
+ - Type 7 - Top-Down/Bottom-Up (can open either from the bottom or from the top).
+	* Examples: Duette TDBU, Vignette TDBU.
+	* Uses the “primary” and “secondary” control types.
 
- * Type 8 - Duolite (front and rear shades).
- * * Examples: Roller Duolite, Vignette Duolite, Dual Roller.
- * * Uses the “primary” and “secondary” control types.
- * * Note: In some cases the front and rear shades are
+ - Type 8 - Duolite (front and rear shades).
+	* Examples: Roller Duolite, Vignette Duolite, Dual Roller.
+	* Uses the “primary” and “secondary” control types.
+	* Note: In some cases the front and rear shades are
 controlled by a single motor and are on a single tube, so they cannot operate independently — the
 front shade must be down before the rear shade can deploy. In other cases, they are independent with
 two motors and two tubes. Where they are dependent, the shade firmware will force the appropriate
 front shade position when the rear shade is controlled — there is no need for the control system to
 take this into account.
 
- * Type 9 - Duolite with 90° Tilt. (front bottom up shade that also tilts plus a rear blackout (non-tilting) shade).
- * * Example: Silhouette Duolite, Silhouette Adeux.
- * * Uses the “primary,” “secondary,” and “tilt” control types Note: Like with Type 8, these can be
+ - Type 9 - Duolite with 90° Tilt. (front bottom up shade that also tilts plus a rear blackout (non-tilting) shade).
+	* Example: Silhouette Duolite, Silhouette Adeux.
+	* Uses the “primary,” “secondary,” and “tilt” control types Note: Like with Type 8, these can be
 either dependent or independent.
 
- * Type 10 - Duolite with 180° Tilt.
- * * Example: Silhouette Halo Duolite.
- * * Uses the “primary,” “secondary,” and “tilt” control types
+ - Type 10 - Duolite with 180° Tilt.
+	* Example: Silhouette Halo Duolite.
+	* Uses the “primary,” “secondary,” and “tilt” control types
 
- **Note:** The PowerView Plugin has no support for the "tilt" control type *when running with a V2 or earlier hub*. 
- Also with V2, the Plugin always treates the shades as if they were Type 7, so both "primary" and "secondary" are supported. 
- Use "primary" for the bottom setting, and "secondary" for the top. Always set "secondary" to zero or blank if your 
-shade does not move at the top.
+ **Notes** 
+ * The PowerView Plugin has no support for the "tilt" control type *when running with a 
+ V2 or earlier hub*. Also with V2, the Plugin always treates the shades as if they were 
+ Type 7, so both "primary" and "secondary" are supported. Use "primary" for the bottom 
+ setting, and "secondary" for the top. Always set "secondary" to zero or blank if your 
+ shade does not move at the top.
+ * The plugin will show the current state of the shade, including its position, in the list 
+of custom states of the device. However, if the shade is moved using the manual controls or
+the PowerView mobile app, the shade can get out of sync with what is shown in Indigo.
 
 
 

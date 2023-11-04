@@ -1,6 +1,5 @@
 
 import base64
-import logging
 import math
 import requests
 try:
@@ -79,7 +78,7 @@ class PowerViewGen3:
 
     def __init__(self, prefs):
         super().__init__()
-        self.logger = logging.getLogger(prefs.get('logger', "net.segment7.powerview"))
+        self.logger = prefs.get('logger', None) # logging.getLogger(prefs.get('logger', "net.segment7.powerview"))
 
     def activateScene(self, hubHostname, sceneId):
         activateSceneUrl = self.URL_SCENES_ACTIVATE_.format(h=hubHostname, id=sceneId)
@@ -113,16 +112,24 @@ class PowerViewGen3:
 
     def setShadePosition(self, hubHostname, shadeId, pos):
         # convert 0-100 values to 0-1.
-        primary = float(pos.get('primary', '0')) / 100.0
-        secondary = float(pos.get('secondary', '0')) / 100.0
-        tilt = float(pos.get('tilt', '0')) / 100.0
-        velocity = float(pos.get('velocity', '0')) / 100.0
-        positions = {"primary": primary, "secondary": secondary, "tilt": tilt, "velocity": velocity}
+        if pos.get('primary', '0') in range(0, 101) and \
+                pos.get('secondary', '0') in range(0, 101) and \
+                pos.get('tilt', '0') in range(0, 101) and \
+                pos.get('velocity', '0') in range(0, 101):
 
-        shadeUrl = self.URL_SHADES_POSITIONS_.format(h=hubHostname, id=shadeId)
-        pos = {'positions': positions}
+            primary = float(pos.get('primary', '0')) / 100.0
+            secondary = float(pos.get('secondary', '0')) / 100.0
+            tilt = float(pos.get('tilt', '0')) / 100.0
+            velocity = float(pos.get('velocity', '0')) / 100.0
+            positions = {"primary": primary, "secondary": secondary, "tilt": tilt, "velocity": velocity}
 
-        self.put(shadeUrl, pos)
+            shade_url = self.URL_SHADES_POSITIONS_.format(h=hubHostname, id=shadeId)
+            pos = {'positions': positions}
+            self.put(shade_url, pos)
+            return True
+        else:
+            indigo.server.log('Position sent to Set Shade Position must be values from 0 to 100.')
+            return False
 
     def scenes(self, hubHostname):
         scenesURL = self.URL_SCENES_.format(h=hubHostname, id='')
@@ -162,12 +169,12 @@ class PowerViewGen3:
             else:
                 data['batteryLevel'] = 'unk'
 
-            if 'position' in data:
+            if 'positions' in data:
                 # Convert positions to integer percentages
-                data['position']['primary'] = self.to_percent(data['position']['primary'])
-                data['position']['secondary'] = self.to_percent(data['position']['secondary'])
-                data['position']['tilt'] = self.to_percent(data['position']['tilt'])
-                data['position']['velocity'] = self.to_percent(data['position']['velocity'])
+                data['positions']['primary'] = self.to_percent(data['positions']['primary'])
+                data['positions']['secondary'] = self.to_percent(data['positions']['secondary'])
+                data['positions']['tilt'] = self.to_percent(data['positions']['tilt'])
+                data['positions']['velocity'] = self.to_percent(data['positions']['velocity'])
 
         self.logger.debug("shade V3: Return data={}".format(data))
         return data
@@ -182,8 +189,8 @@ class PowerViewGen3:
 
         return shadeIds
 
-    @staticmethod
-    def to_percent(pos, divr=1.0):
+    def to_percent(self, pos, divr=1.0) -> int:
+        self.logger.debug(f"to_percent: pos={pos}, becomes {math.trunc((float(pos) / divr * 100.0) + 0.5)}")
         return math.trunc((float(pos) / divr * 100.0) + 0.5)
 
     def do_get(self, url, *param, **kwargs):
@@ -217,13 +224,13 @@ class PowerViewGen3:
         except requests.exceptions.RequestException as e:
             self.logger.exception(f"Error in put {url} with data {data}:", exc_info=True)
             self.logger.debug(
-                f"    Get from '{url}' returned {'n/a' if not res else res.status_code}, response body '{'n/a' if not res else res.text}'")
-            return {}
+                f"    Get from '{url}' returned {'n/a' if not res else res.status_code}, response body {'n/a' if not res else res.text}'")
+            return False
 
-        if res.status_code != requests.codes.ok:
+        if res and res.status_code != requests.codes.ok:
             self.logger.error('Unexpected response in put %s: %s' % (url, str(res.status_code)))
             self.logger.debug(f"    Get from '{url}' returned {res.status_code}, response body '{res.text}'")
-            return {}
+            return False
 
         response = res.json()
         return response

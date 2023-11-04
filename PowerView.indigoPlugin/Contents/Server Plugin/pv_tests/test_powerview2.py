@@ -18,7 +18,7 @@ def tpv2(monkeypatch):
     if not MockPowerView.hub_available("V3"):
         monkeypatch.setattr(PowerViewGen3, "do_get", MockPowerView.mock_get)
     monkeypatch.setattr(requests, "put", MockPowerView.mock_put)
-    tpv2 = PowerView({'logger': "wsgmac.com.test.powerview"})
+    tpv2 = PowerView({'logger': logger})
     return tpv2
 
 
@@ -46,11 +46,15 @@ def test_shade(tpv2: PowerView) -> None:
         result = tpv2.shade(MockPowerView.hub_host2(), shadeId)
 
         if result:
-            assert isinstance(result, dict)
-            assert result['name']
-            assert isinstance(result['type'], int)
-            shade_type = result['type']
-            assert shade_type in range(11)
+            assert isinstance(result, dict), "Bad result from PowerView.shade"
+            assert result['name'], "Bad result from PowerView.shade"
+            assert isinstance(result['type'], int), "Bad result from PowerView.shade"
+            assert result['positions'], f"Position data missing from shade {result['name']}"
+            assert result['positions']['primary'] in range(101), f"Invalid primary position = {result['positions']['primary']}"
+            assert result['positions']['secondary'] in range(101), f"Invalid secondary position = {result['positions']['secondary']}"
+            assert result['positions']['tilt'] in range(101), f"Invalid tilt position = {result['positions']['tilt']}"
+            assert result['positions']['velocity'] in range(101), f"Invalid velocity position = {result['positions']['velocity']}"
+            assert result['capabilities'] in range(12)
     logger.debug("==========================")
 
 
@@ -140,4 +144,36 @@ def test_set_shade_position(tpv2: PowerView) -> None:
     for shadeId in tpv2.shadeIds(MockPowerView.hub_host2()):
         tpv2.setShadePosition(MockPowerView.hub_host2(), shadeId, {'primary': 0, 'secondary': 0, 'tilt': 0, 'velocity': 0})
         assert MockPowerView.mock_put_called
+    logger.debug("==========================")
+
+
+def test_to_percent(tpv2: PowerView) -> None:
+    logger.debug("test_to_percent(tpv2: PowerView) -> None:")
+
+    # def test_to_percent(pos, divr=1.0):
+
+    assert 0 == tpv2.to_percent(0), "to_percent(0) failed"
+    assert 1 == tpv2.to_percent(655), "to_percent(655) failed"
+    assert 10 == tpv2.to_percent(6554), "to_percent(6554) failed"
+    assert 50 == tpv2.to_percent(32768), "to_percent(32768) failed"
+    assert 90 == tpv2.to_percent(58982), "to_percent(58982) failed"
+    assert 99 == tpv2.to_percent(64880), "to_percent(64880) failed"
+    assert 100 == tpv2.to_percent(65535), "to_percent(65535) failed"
+    assert 200 == tpv2.to_percent(131070), "to_percent(131070) failed"
+    logger.debug("==========================")
+
+
+def test_fm_percent(tpv2: PowerView) -> None:
+    logger.debug("test_fm_percent(tpv2: PowerView) -> None:")
+
+    # def test_fm_percent(pos, divr=1.0):
+
+    assert 0 == tpv2.fm_percent(0), "fm_percent(0) failed"
+    assert 655 == tpv2.fm_percent(1), "fm_percent(1) failed"
+    assert 6554 == tpv2.fm_percent(10), "fm_percent(10) failed"
+    assert 32768 == tpv2.fm_percent(50), "fm_percent(50) failed"
+    assert 58982 == tpv2.fm_percent(90), "fm_percent(90) failed"
+    assert 64880 == tpv2.fm_percent(99), "fm_percent(99) failed"
+    assert 65535 == tpv2.fm_percent(100), "fm_percent(100) failed"
+    assert 131070 == tpv2.fm_percent(200), "fm_percent(200) failed"
     logger.debug("==========================")

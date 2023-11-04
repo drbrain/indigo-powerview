@@ -1,6 +1,5 @@
 
 import base64
-import logging
 import math
 import requests
 import requests.api
@@ -15,7 +14,7 @@ class PowerView:
 
     def __init__(self, prefs):
         super().__init__()
-        self.logger = logging.getLogger(prefs.get('logger', "net.segment7.powerview"))
+        self.logger = prefs.get('logger', None)  # logging.getLogger(prefs.get('logger', "net.segment7.powerview"))
 
     def activateScene(self, hubHostname, sceneId):
         activateSceneUrl = 'http://%s/api/scenes?sceneId=%s' % (hubHostname, sceneId)
@@ -72,11 +71,11 @@ class PowerView:
 
         if primary in range(101) and secondary in range(101):
             # New integer percentage 0 to 100 where 100% means fully open
-            top = int((float(secondary) / 65535.0 * 100.0) + 0.5)
-            bottom = int((float(primary) / 65535.0 * 100.0) + 0.5)
+            top = self.fm_percent(secondary)
+            bottom = self.fm_percent(primary)
         else:
             # Assume Set Shade Position Action has not been edited since the plugin was updated and still uses the V2 position values.
-            self.logger.warning(f"setShadePosition: Position uses V2 values 0-65k. Using bottom={primary} and top={secondary} as is.")
+            self.logger.warning(f"setShadePosition: Change position values to a percentage from 0 to 100 for the amount the shade is open.")
             top = secondary
             bottom = primary
         body = {
@@ -91,6 +90,7 @@ class PowerView:
         }
 
         self.put(shadeUrl, body)
+        return True
 
     def scenes(self, hubHostname):
         scenesURL = 'http://%s/api/scenes/' % (hubHostname)
@@ -114,11 +114,11 @@ class PowerView:
 
         return data
 
-    def shade(self, hubHostname, shadeId, room=False):
-        shadeUrl = 'http://%s/api/shades/%s' % (hubHostname, shadeId)
+    def shade(self, hubHostname, shadeId, room=False) -> dict:
+        shadeUrl = 'http://%s/api/shades/%s?refresh=true' % (hubHostname, shadeId)
 
         data = self.get(shadeUrl)
-        if data == '':
+        if not data:
             return {}
 
         data = data.pop('shade')
@@ -135,14 +135,14 @@ class PowerView:
         positions = data.get('positions', [])
         if 'position1' in positions:
             if positions['posKind1'] == 1:
-                positions['primary'] = positions['position1'] / 65535
+                positions['primary'] = self.to_percent(positions['position1'])
             else:
-                positions['secondary'] = positions['position1'] / 65535
+                positions['secondary'] = self.to_percent(positions['position1'])
         if 'position2' in positions:
             if positions['posKind2'] == 1:
-                positions['primary'] = positions['position2'] / 65535
+                positions['primary'] = self.to_percent(positions['position2'])
             else:
-                positions['secondary'] = positions['position2'] / 65535
+                positions['secondary'] = self.to_percent(positions['position2'])
         if 'primary' not in positions:
             positions['primary'] = 0.0
         if 'secondary' not in positions:
@@ -165,11 +165,15 @@ class PowerView:
         return data['shadeIds']
 
     @staticmethod
-    def to_percent(pos, divr=1.0):
-        return math.trunc((float(pos) / divr * 100.0) + 0.5)
+    def to_percent(pos):
+        return math.trunc((float(pos) / 65535.0 * 100.0) + 0.5)
+
+    @staticmethod
+    def fm_percent(pos):
+        return int((float(pos) / 100.0 * 65535.0) + 0.5)
 
     def do_get(self, url, *param, **kwargs) -> requests.Response:
-        '''This method exists to make it easier to test the plugin.'''
+        'This method exists to make it easier to test the plugin.'
         return requests.get(url, *param, **kwargs)
 
     def get(self, url) -> dict:

@@ -1,4 +1,5 @@
 
+import copy
 import logging
 import pv_runner as pv
 import re
@@ -17,7 +18,7 @@ A_MOCKED_SHADE3 = {"id": 1,
                    "batteryStatus": 3, "roomId": 10, "firmware": {"revision": 3, "subRevision": 0, "build": 359}, "shadeGroupIds": [],
                    "positions": {"primary": 0.46, "secondary": 0.25, "tilt": 0, "velocity": 0}, "signalStrength": -49,
                    "bleName": "R23:BA88"}
-MOCKED_SHADES3 = [{"id": 1, "type": 5, "name": "RGF5dGltZSBTaGFkZXM=", "ptName": "Mock Bay  Center", "motion": None, "capabilities": 0, "powerType": 0,
+MOCKED_SHADES3 = [{"id": 1, "type": 5, "name": "RGF5dGltZSBTaGFkZXM=", "ptName": "Mock Bay Center", "motion": None, "capabilities": 0, "powerType": 0,
                    "batteryStatus": 3, "roomId": 10, "firmware": {"revision": 3, "subRevision": 0, "build": 359}, "shadeGroupIds": [],
                    "positions": {"primary": 0.46, "secondary": 0, "tilt": 0, "velocity": 0}, "signalStrength": -49, "bleName": "R23:BA88"},
                   {"id": 2, "type": 5, "name": "QmF5ICBMZWZ0", "ptName": "Mock Bay  Left", "motion": None, "capabilities": 0, "powerType": 0,
@@ -47,7 +48,7 @@ MOCKED_DEVICES = [{'id': 10, 'folderId': 0, 'address': 'V2', 'deviceTypeId': POW
                   {'id': 3, 'folderId': 0, 'address': "V3:3", 'deviceTypeId': POWERVIEW_SHADE, 'name': 'Shade 3', 'generation': 3,
                    'pluginId': POWERVIEW_ID, 'states': {'stateField': 0, 'need_update': 0}}]
 
-current_devices = MOCKED_DEVICES.copy()
+current_devices = copy.deepcopy(MOCKED_DEVICES)
 host_ip2 = ''
 host_ip3 = ''
 logger = logging.getLogger("wsgmac.com.test.powerview")
@@ -183,7 +184,7 @@ class MockPowerView:
         def create(self, address, data, folder_id):
             # create_shade_device(self, address, data, folder_id) -> shade_device:
             if not data:
-                data = A_MOCKED_SHADE3.copy()
+                data = copy.deepcopy(A_MOCKED_SHADE3)
             data['address'] = address
             data['folderId'] = folder_id
             data['deviceTypeId'] = POWERVIEW_SHADE
@@ -270,12 +271,12 @@ class MockPowerView:
             if a_match is not None:
                 shade_id = a_match.group(1)
                 if shade_id:  # V3
-                    resp.data = A_MOCKED_SHADE3.copy()
+                    resp.data = copy.deepcopy(A_MOCKED_SHADE3)
                     resp.data['address'] = f"{host_ip2}:{shade_id}" if shade_id == 1 else f"{host_ip3}:{shade_id}"
                     resp.data['id'] = shade_id
 
             elif url.endswith('/home/shades/'):  # V3
-                resp.data = MOCKED_SHADES3.copy()
+                resp.data = copy.deepcopy(MOCKED_SHADES3)
 
             elif url.endswith('/home/rooms/'):  # V3
                 resp.data = [{'id': 1, 'name': 'QmVkcm9vbQ==', 'ptName': 'Mock Bedroom', 'color': '11', 'icon': '12', 'type': 0, 'shadeGroups': []},
