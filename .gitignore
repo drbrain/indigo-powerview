@@ -2,3 +2,4 @@
 *.pyc
 .idea/
 **/.pytest_cache/
+/PowerView.indigoPlugin/Contents/Packages/

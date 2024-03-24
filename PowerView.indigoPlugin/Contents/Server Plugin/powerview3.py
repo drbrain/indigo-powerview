@@ -112,10 +112,10 @@ class PowerViewGen3:
 
     def setShadePosition(self, hubHostname, shadeId, pos):
         # convert 0-100 values to 0-1.
-        if pos.get('primary', '0') in range(0, 101) and \
-                pos.get('secondary', '0') in range(0, 101) and \
-                pos.get('tilt', '0') in range(0, 101) and \
-                pos.get('velocity', '0') in range(0, 101):
+        if pos.get('primary', 0) in range(0, 101) and \
+                pos.get('secondary', 0) in range(0, 101) and \
+                pos.get('tilt', 0) in range(0, 101) and \
+                pos.get('velocity', 0) in range(0, 101):
 
             primary = float(pos.get('primary', '0')) / 100.0
             secondary = float(pos.get('secondary', '0')) / 100.0
@@ -152,10 +152,11 @@ class PowerViewGen3:
         indigo.server.log('Scene Collections are not available on Generation 3+ gateway. Use a Multi-Room Scene instead.')
         return []
 
-    def shade(self, hubHostname, shadeId, room=False) -> dict:
-        shadeUrl = self.URL_SHADES_.format(h=hubHostname, id=shadeId)
+    def shade(self, hubHostname, shadeId, room=False, position=False) -> dict:
+        # parameter , position=False is not used in Gen 3
+        shade_url = self.URL_SHADES_.format(h=hubHostname, id=shadeId)
 
-        data = self.get(shadeUrl)
+        data = self.get(shade_url)
         if data:
             data['shadeId'] = data.pop('id')
 
@@ -190,7 +191,6 @@ class PowerViewGen3:
         return shadeIds
 
     def to_percent(self, pos, divr=1.0) -> int:
-        self.logger.debug(f"to_percent: pos={pos}, becomes {math.trunc((float(pos) / divr * 100.0) + 0.5)}")
         return math.trunc((float(pos) / divr * 100.0) + 0.5)
 
     def do_get(self, url, *param, **kwargs):

@@ -5,6 +5,8 @@ import logging
 from powerview2 import PowerView
 from powerview3 import PowerViewGen3
 import requests
+
+Initial_Need = 4
 try:
     import indigo
 except ImportError:
@@ -38,7 +40,7 @@ class Plugin(indigo.PluginBase):
     ]
 
     def __init__(self, pluginId, pluginDisplayName, pluginVersion, pluginPrefs):
-        # indigo.DEBUG_SERVER_IP = "localhost"  # IP address of the Mac running PyCharm
+        # indigo.DEBUG_SERVER_IP = "WSG-Studio.local"  # IP address of the Mac running PyCharm
         super(Plugin, self).__init__(pluginId, pluginDisplayName, pluginVersion, pluginPrefs)
 
         self.pluginPrefs = pluginPrefs
@@ -74,12 +76,14 @@ class Plugin(indigo.PluginBase):
         global powerview2
         global powerview3
 
+        self.logger.setLevel('INFO' if not self.debugSetting else 'DEBUG')
+        self.log("Starting PowerView plugin.")
+
         # preferences pv2 and pv3 are set when testing
         preferences = self.pluginPrefs if isinstance(self.pluginPrefs, dict) else self.pluginPrefs.to_dict()
         preferences['logger'] = self.logger
         powerview2 = self.pluginPrefs.get("pv2", PowerView(preferences))
         powerview3 = self.pluginPrefs.get("pv3", PowerViewGen3(preferences))
-        self.logger.setLevel('INFO' if not self.debugSetting else 'DEBUG')
         if not powerview3 or not powerview2:
             raise RuntimeError('PowerView cannot start. Problem with hub interface.')
 
@@ -88,39 +92,47 @@ class Plugin(indigo.PluginBase):
     #########################################
     def activateScene(self, action):
         hub = indigo.devices[action.deviceId]
-        sceneId = action.props['sceneId']
+        scene_id = action.props['sceneId']
+        scene_name = ''
+        for scene in self.listScenes(targetId=hub.id):
+            if scene[0] == int(scene_id):
+                scene_name = scene[1]
 
-        indigo.server.log(f"activate scene {sceneId} on hub {hub.name}")
-        self.get_pv(hub.address).activateScene(hub.address, sceneId)
+        indigo.server.log(f"activate scene '{scene_name}' (id: {scene_id}) on hub {hub.name}")
+        self.get_pv(hub.address).activateScene(hub.address, scene_id)
         self.update_shade_later(hub)
 
     def activateSceneCollection(self, action):
         hub = indigo.devices[action.deviceId]
-        sceneCollectionId = action.props['sceneCollectionId']
+        scene_collection_id = action.props['sceneCollectionId']
+        scene_name = ''
+        for scene in self.listSceneCollections(targetId=hub):
+            if scene['id'] == scene_collection_id:
+                scene_name = action.props['scene_name']
 
-        indigo.server.log(f'activate scene collection {sceneCollectionId} on hub {hub.name}')
-        self.get_pv(hub.address).activateSceneCollection(hub.address, sceneCollectionId)
+        indigo.server.log(f"activate scene collection '{scene_name}' (id: {scene_collection_id}) on hub {hub.name}")
+        self.get_pv(hub.address).activateSceneCollection(hub.address, scene_collection_id)
         self.update_shade_later(hub)
 
     def calibrateShade(self, action):
         shade = indigo.devices[action.deviceId]
         hubHostname, shadeId = shade.address.split(':')
 
-        indigo.server.log('Calibrating shade %s (%s) (id:%s)' % (shade.name, shade.id, shadeId))
+        indigo.server.log('Calibrating shade %s (%s) (id: %s)' % (shade.name, shade.id, shadeId))
         self.get_pv(hubHostname).calibrateShade(hubHostname, shadeId)
 
     def jogShade(self, action):
         shade = indigo.devices[action.deviceId]
         hubHostname, shadeId = shade.address.split(':')
 
-        indigo.server.log('Jogging shade %s (%s) (id:%s)' % (shade.name, shade.id, shadeId))
+        indigo.server.log('Jogging shade %s (%s) (id: %s)' % (shade.name, shade.id, shadeId))
         self.get_pv(hubHostname).jogShade(hubHostname, shadeId)
         self.update_shade_later(shade)
 
     def stopShade(self, action):
         shade = indigo.devices[action.deviceId]
         hubHostname, shadeId = shade.address.split(':')
-        indigo.server.log('Stopping shade %s (%s) (id:%s)' % (shade.name, shade.id, shadeId))
+        indigo.server.log('Stopping shade %s (%s) (id: %s)' % (shade.name, shade.id, shadeId))
         self.get_pv(hubHostname).stopShade(hubHostname, shadeId)
         self.update_shade_later(shade)
 
@@ -134,15 +146,18 @@ class Plugin(indigo.PluginBase):
         self.logger.debug('Setting position of %s (%s) to primary (bottom): %s, secondary (top): %s, tilt: %s, velocity: %s' %
                          (shade.name, action.deviceId, primary, secondary, tilt, velocity))
 
-        hubHostname, shadeId = shade.address.split(':')
+        hubHostname, shade_id = shade.address.split(':')
 
         positions = {"primary": primary, "secondary": secondary, "tilt": tilt, "velocity": velocity}
-        if self.get_pv(hubHostname).setShadePosition(hubHostname, shadeId, positions):
+        indigo.server.log(f"Setting position of shade '{shade.name}' (id: {shade_id}) on hub {hubHostname} to {positions}")
+
+        if self.get_pv(hubHostname).setShadePosition(hubHostname, shade_id, positions):
             self.update_shade_later(shade)
 
     #########################################
     #  Indigo UI Support Routines
     #########################################
+
     def getCurrentPosition(self, valuesDict, typeId, devId):
         """ Returns the current values of primary, secondary, tilt and velocity for
             existing shade devices. If the shade device is new, the devId will be
@@ -156,7 +171,7 @@ class Plugin(indigo.PluginBase):
             hubHostname, shadeId = shade.address.split(':')
 
             self.get_pv(hubHostname).jogShade(hubHostname, shadeId)
-            data = self.get_pv(hubHostname).shade(hubHostname, shadeId)
+            data = self.get_pv(hubHostname).shade(hubHostname, shadeId, position=True)
 
             if data:
                 # Enable/disable entry fields so only those needed are enabled.
@@ -207,7 +222,7 @@ class Plugin(indigo.PluginBase):
         hub_list = sorted(hub_list, key=lambda pair: pair[1])
         return hub_list
 
-    def listScenes(self, filter="", valuesDict="", type="", targetId=0):
+    def listScenes(self, filter="", valuesDict="", type="", targetId=0) -> list:
         hub = self.devices[targetId]
 
         scenes = self.get_pv(hub.address).scenes(hub.address)
@@ -219,7 +234,7 @@ class Plugin(indigo.PluginBase):
         scene_list = sorted(scene_list, key=lambda pair: pair[1])
         return scene_list
 
-    def listSceneCollections(self, filter="", valuesDict="", type="", targetId=None):
+    def listSceneCollections(self, filter="", valuesDict="", type="", targetId=None) -> list:
         hub = self.devices[targetId]
 
         data = self.get_pv(hub.address).sceneCollections(hub.address)
@@ -248,7 +263,7 @@ class Plugin(indigo.PluginBase):
                     address = '%s:%s' % (hub.address, shade_id)
 
                     if address not in shade_dev_addresses:
-                        shade = self.get_pv(hub.address).shade(hub.address, shade_id)
+                        shade = self.get_pv(hub.address).shade(hub.address, shade_id, room=True)
                         if shade:
                             room_name = self.get_pv(hub.address).room(hub.address, shade['roomId'])['name']
                             shade_name = shade['name']
@@ -297,25 +312,34 @@ class Plugin(indigo.PluginBase):
         while True:
             try:
                 # self.logger.debug(f"Concurrent Thread starting to check shades")
-                for shade in indigo.devices.iter(POWERVIEW_SHADE_F):
-                    # self.logger.debug(f"Checking shade {shade.name} in thread")
-                    props = shade.pluginProps
-                    need_upd = props.get('need_update', 0)
-                    if need_upd:
-                        self.logger.debug(f"Updating shade {shade.name} with Need Update={need_upd}")
-                        need_upd -= 1
-                        # This props update will trigger call to deviceStartComm which will update the position
-                        props.update({'need_update': need_upd})
-                        shade.replacePluginPropsOnServer(props)
-                    # else:
-                        # self.logger.debug(f"No thread update needed for shade {shade.name}")
+                need_count = 0
+                for a_dev_id in self.devices.keys():  # indigo.devices.iter(POWERVIEW_SHADE_F):
+                    if (self.devices[a_dev_id]).deviceTypeId == POWERVIEW_SHADE_F:
+                        shade = self.devices[a_dev_id]
+                        # self.logger.debug(f"Checking shade {shade.name} in thread")
+                        props = shade.pluginProps
+                        need_upd = props.get('need_update', 0)
+                        if need_upd:
+                            if 0 < need_upd <= Initial_Need:
+                                self.logger.debug(f"Updating shade {shade.name} with Need Update={need_upd}")
+                                need_upd -= 1
 
-                self.sleep(15)
+                                # This props update will trigger call to deviceStartComm which will update the position
+                                props.update({'need_update': need_upd})
+                                shade.replacePluginPropsOnServer(props)
+                            else:
+                                self.logger.debug(f"Bad need_update value of {need_upd} on shade {shade.name}")
+                                props.update({'need_update': 0})
+                                shade.replacePluginPropsOnServer(props)
+
+                # self.logger.debug(f"ConcurrentThread: About to sleep")
+                self.sleep(30)
+                # self.logger.debug(f"ConcurrentThread: Back from sleep")
 
             except self.StopThread:
                 return
-            except Exception as ex:
-                self.logger.debug(f"Exception in runConcurrentThread:", exc_info=True)
+            except:
+                self.logger.exception(f"Exception in runConcurrentThread:")
 
     def validateActionConfigUi(self, valuesDict, typeId, deviceId):
         valid = True
@@ -423,8 +447,8 @@ class Plugin(indigo.PluginBase):
 
         return new_shade
 
-    def find_shade_on_hub(self, hubHostname, shadeId, need_room=False):
-        shade_data = self.get_pv(hubHostname).shade(hubHostname, shadeId, room=need_room)
+    def find_shade_on_hub(self, hubHostname, shadeId, need_room=False, need_position=True):
+        shade_data = self.get_pv(hubHostname).shade(hubHostname, shadeId, room=need_room, position=need_position)
         if not shade_data:
             return {}
 
@@ -455,6 +479,22 @@ class Plugin(indigo.PluginBase):
         if not pv and not self.production:
             raise KeyError(f'Invalid hub address {hub_address}.')
         return pv
+
+    def log(self, message, *args, **kwargs):
+        ''' Logs to both the visible indigo log and to the PowerView plugin log so that the plugin log has all the info.
+
+        Arguments:
+            :arg message - Message to be shown in the log line.
+            :arg args - The remaining positional parameters to be passed to the logging mechanism.
+            :arg kwargs - Any keyword parameters to be passed to the logging mechanism.
+        '''
+        if kwargs['level']:  # level - The Logger.<level> value for the desired logging levels.
+            level = kwargs['level']
+            indigo.server.log(level, message, *args, **kwargs)
+            self.logger.log(level, message, *args, **kwargs)
+        else:
+            indigo.server.log(message, *args, **kwargs)
+            self.logger.log(logging.INFO, message, *args, **kwargs)
 
     def validate_hub(self, hub_address, device=None) -> bool:
         """Validates that the supplied hub address is a valid hub.
@@ -524,7 +564,7 @@ class Plugin(indigo.PluginBase):
             try:
                 hub_hostname, shade_id = device.address.split(':')
 
-                data = self.find_shade_on_hub(hub_hostname, shade_id)
+                data = self.find_shade_on_hub(hub_hostname, shade_id, need_position=True)
                 if not data:
                     return
                 data.pop('name')  # don't overwrite local changes
@@ -553,14 +593,14 @@ class Plugin(indigo.PluginBase):
         """ Save an indicator in plugin properties for this shade to signal to do an update later, after it has moved. """
         if dev.deviceTypeId == POWERVIEW_SHADE_T:
             props = dev.pluginProps
-            props.update({'need_update': 4})
+            props.update({'need_update': Initial_Need})
             dev.replacePluginPropsOnServer(props)
 
         elif dev.deviceTypeId == POWERVIEW_HUB_T:
             for shade in indigo.devices.iter(POWERVIEW_SHADE_F):
                 if shade.address.startswith(dev.address):
                     props = shade.pluginProps
-                    props.update({'need_update': 4})
+                    props.update({'need_update': Initial_Need})
                     shade.replacePluginPropsOnServer(props)
 
     def update_shade_open_state(self, shade, data, key):

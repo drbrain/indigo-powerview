@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 
-import indigo
 import logging
 import sys
+try:
+    import indigo
+except ImportError:
+    pass
 
 
 def do_live_hub():

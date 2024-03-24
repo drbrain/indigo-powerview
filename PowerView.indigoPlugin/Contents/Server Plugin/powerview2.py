@@ -114,8 +114,11 @@ class PowerView:
 
         return data
 
-    def shade(self, hubHostname, shadeId, room=False) -> dict:
-        shadeUrl = 'http://%s/api/shades/%s?refresh=true' % (hubHostname, shadeId)
+    def shade(self, hubHostname, shadeId, room=False, position=False) -> dict:
+        if position:
+            shadeUrl = 'http://%s/api/shades/%s?refresh=true' % (hubHostname, shadeId)
+        else:
+            shadeUrl = 'http://%s/api/shades/%s/' % (hubHostname, shadeId)
 
         data = self.get(shadeUrl)
         if not data:

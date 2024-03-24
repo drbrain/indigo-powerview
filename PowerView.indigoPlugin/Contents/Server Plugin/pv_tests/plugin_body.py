@@ -291,6 +291,10 @@ def testbody_current_position(hub, config):
     assert values_dict2['secondary'].isdecimal(), f"secondary value is not only digits. secondary={values_dict2['secondary']}"
     assert values_dict2['tilt'].isdecimal(), f"tilt value is not only digits. tilt={values_dict2['tilt']}"
     assert values_dict2['velocity'].isdecimal(), f"velocity value is not only digits. velocity={values_dict2['velocity']}"
+    assert int(values_dict2['primary']) in range(101), f"primary={values_dict2['primary']} not an integer value from 0 100"
+    assert int(values_dict2['secondary']) in range(101), f"secondary={values_dict2['secondary']} not an integer value from 0 100"
+    assert int(values_dict2['tilt']) in range(101), f"tilt={values_dict2['tilt']} not an integer value from 0 100"
+    assert int(values_dict2['velocity']) in range(101), f"velocity={values_dict2['velocity']} not an integer value from 0 100"
     logger.debug("==========================")
 
 
